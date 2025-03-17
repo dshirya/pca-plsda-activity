@@ -2,6 +2,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
+not_prototype_CIFs/
+.DS_Store
 
 # C extensions
 *.so

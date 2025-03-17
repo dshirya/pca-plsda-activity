@@ -313,7 +313,8 @@ def run_pca_analysis(filepath):
             top_contrib_df = pd.DataFrame({
                 'PC1': [f"{feat}: {val:.3f}" for feat, val in zip(top_features_pc1, top_values_pc1)],
                 'PC2': [f"{feat}: {val:.3f}" for feat, val in zip(top_features_pc2, top_values_pc2)]
-            })
+            }).reset_index(drop=True)
+            top_contrib_df.index += 1
             
             print("\nTop 10 Feature Contributions:")
             display(top_contrib_df)
