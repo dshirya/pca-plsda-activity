@@ -138,7 +138,7 @@ def display_data(ax, data_df, marker_lookup, element_dict, composition_lookup):
     first_structure = data_df.iloc[0]["Structure type"] if not data_df.empty else "default"
     save_plot(first_structure, 'PCA_plot', ax)
 
-def PCA_plot(coord_df, data_df, marker_df) -> plt.Axes:
+def PCA_plot(coord_df, data_df, marker_df, structure_type) -> plt.Axes:
     """
     Main function to plot the PCA view of elements, highlight compound markers,
     and draw connections from compound average coordinates to their constituent elements.
