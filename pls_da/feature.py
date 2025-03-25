@@ -130,8 +130,8 @@ def forward_selection_plsda(filepath, target_column='Class', max_features=None, 
         scores_plot = [info[2] for info in iterations_info]
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=iterations, y=scores_plot, mode='lines+markers', name='Performance'))
-        fig.update_layout(title="Forward Selection Performance History",
-                          xaxis_title="Iteration (Feature Count)",
+        fig.update_layout(title="Forward Selection Performance",
+                          xaxis_title="Number of Features",
                           yaxis_title=f"CV {scoring.capitalize()} Score",
                           template="plotly_white")
         fig.show()
@@ -224,7 +224,7 @@ def backward_elimination_plsda(filepath, target_column='Class', min_features=1, 
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=feature_counts, y=scores_plot, mode='lines+markers', name='Performance'))
         fig.update_layout(title="Backward Elimination Performance",
-                          xaxis_title="Number of Features (Inverted)",
+                          xaxis_title="Number of Features",
                           yaxis_title=f"CV {scoring.capitalize()} Score",
                           xaxis=dict(autorange='reversed'),
                           template="plotly_white")

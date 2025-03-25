@@ -2,7 +2,9 @@ import os
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from IPython.display import display, clear_output
+from sklearn.model_selection import StratifiedKFold
 import ipywidgets as widgets
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.preprocessing import StandardScaler
@@ -408,3 +410,98 @@ def run_plsda_analysis(filepath, target_column='Class'):
     )
     
     display(ui_layout)
+
+# ====================================================
+
+
+def evaluate_subset(numeric_data, target_data, selected_features, n_components=2, scoring='accuracy'):
+    """
+    Evaluates the cross-validated performance of PLS-DA using a given subset of features.
+    
+    This function performs 5-fold cross-validation:
+      - It scales the training and test data.
+      - Fits a PLSRegression model with the specified number of components.
+      - One-hot encodes the target and then predicts on the test fold.
+      - Computes the average CV score (either accuracy or F1).
+    
+    Parameters:
+      numeric_data (pd.DataFrame): DataFrame containing numeric features.
+      target_data (pd.Series): Series containing the target labels.
+      selected_features (list): List of feature names to use.
+      n_components (int): Number of PLS-DA components.
+      scoring (str): 'accuracy' or 'f1'.
+    
+    Returns:
+      float: The average cross-validation score.
+    """
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    scores = []
+    for train_idx, test_idx in cv.split(numeric_data, target_data):
+        X_train = numeric_data.iloc[train_idx][selected_features]
+        y_train = target_data.iloc[train_idx]
+        X_test = numeric_data.iloc[test_idx][selected_features]
+        y_test = target_data.iloc[test_idx]
+        
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+        X_test_scaled = scaler.transform(X_test)
+        
+        y_train_dummies = pd.get_dummies(y_train)
+        pls = PLSRegression(n_components=n_components, scale=False)
+        pls.fit(X_train_scaled, y_train_dummies)
+        
+        y_pred_cont = pls.predict(X_test_scaled)
+        predicted_indices = np.argmax(y_pred_cont, axis=1)
+        y_test_dummies = pd.get_dummies(y_test)
+        predicted_labels = [y_test_dummies.columns[i] for i in predicted_indices]
+        
+        if scoring == 'accuracy':
+            score_val = accuracy_score(y_test.reset_index(drop=True), predicted_labels)
+        else:
+            score_val = f1_score(y_test.reset_index(drop=True), predicted_labels, average='macro')
+        scores.append(score_val)
+    return np.mean(scores)
+
+def evaluate_n_components_plsda(filepath, target_column='Class', scoring='accuracy', max_components=10, verbose=False):
+    """
+    Evaluates the PLS-DA performance for different numbers of components (from 1 to max_components)
+    using all numeric features in the data. It then creates a Plotly graph with the number of components
+    on the x-axis and the corresponding CV score (accuracy or F1) on the y-axis.
+    
+    Parameters:
+      filepath (str): Path to the CSV file.
+      target_column (str): Name of the target column.
+      scoring (str): "accuracy" or "f1".
+      max_components (int): Maximum number of components to evaluate.
+      verbose (bool): If True, prints the CV score for each number of components.
+    
+    Returns:
+      fig (plotly.graph_objects.Figure): The generated performance plot.
+      scores (list): A list of CV scores corresponding to component counts 1 to max_components.
+    """
+    # Load data using the provided function
+    data_clean, numeric_data, target_data = load_and_prepare_data(filepath, target_column)
+    if numeric_data is None:
+        print("Error loading data.")
+        return None, None
+
+    # Use all numeric features for evaluation
+    all_features = list(numeric_data.columns)
+    scores = []
+    for n in range(1, max_components + 1):
+        score = evaluate_subset(numeric_data, target_data, all_features, n_components=n, scoring=scoring)
+        scores.append(score)
+        if verbose:
+            print(f"Number of components: {n}, CV {scoring.capitalize()} Score: {score:.4f}")
+    
+    fig = go.Figure(data=go.Scatter(x=list(range(1, max_components + 1)),
+                                    y=scores,
+                                    mode='lines+markers',
+                                    name='CV Score'))
+    fig.update_layout(title="PLS-DA: CV Performance vs. Number of Components",
+                      xaxis_title="Number of Components",
+                      yaxis_title=f"CV {scoring.capitalize()} Score",
+                      template="ggplot2",
+                      font=dict(size=18))
+    fig.show()
+    return fig, scores
