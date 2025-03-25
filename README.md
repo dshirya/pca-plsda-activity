@@ -23,10 +23,10 @@ pip install jupyterlab
 ```
   
 3. **Download or Clone the Project**
-*  Option 1: Download 
+*  Option 1: Download ZIP  
 Download the project as a ZIP file from the repository page and extract it to a folder on your computer.
 
-* Option 2: Clone with Git
+* Option 2: Clone with Git  
 If you have Git installed, open your terminal and run:
 ```bash
 git clone https://github.com/dshirya/pca-plsda-activity/tree/main
