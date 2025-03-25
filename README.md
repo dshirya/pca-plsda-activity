@@ -29,7 +29,7 @@ Download the project as a ZIP file from the repository page and extract it to a 
 * Option 2: Clone with Git
 If you have Git installed, open your terminal and run:
 ```bash
-git clone https://github.com/your-username/your-repo-name.git
+git clone https://github.com/dshirya/pca-plsda-activity/tree/main
 ```
 4. **Install Required Libraries**
 * Navigate to your project folder in the terminal:
