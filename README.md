@@ -53,6 +53,10 @@ jupyter lab
 A web browser window will open showing the Jupyter Lab interface.
 
 2.	Open the Notebook:  
-In Jupyter Lab, locate and click on the notebook file (it will have the .ipynb extension).
-3.	Run the Code Cells:  
+In Jupyter Lab, locate and click on the notebook file (it will have the .ipynb extension).  
+Main files:
+    * ```pca-analysis.ipynb```
+    * ```pls_da-analysis.ipynb```
+
+4.	Run the Code Cells:  
 You can run each cell by clicking on it and pressing **Shift + Enter** or by clicking the “Run” button. Follow the instructions in the notebook to perform PCA and PLS-DA analyses.
