@@ -4,11 +4,9 @@ import random
 from sklearn.model_selection import StratifiedKFold
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.preprocessing import StandardScaler
-from evaluation_metrics import accuracy_score, f1_score
+from pls_da.evaluation_metrics import accuracy_score, f1_score
 import plotly.graph_objects as go
-
-# Import your data-loading function from your existing PLS‑DA module.
-from pls_da_man import load_and_prepare_data
+from pls_da.plsda import load_and_prepare_data
 
 def _evaluate_subset(X, y, selected_features, n_components=2, scoring='accuracy'):
     """
