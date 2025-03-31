@@ -3,65 +3,6 @@
 
 This repository provides an educational activity for chemistry students and professionals to learn basic machine learning techniques – specifically PCA and PLS-DA – in the context of inorganic chemistry. The activity uses **interactive Jupyter notebooks** to explore how elemental properties can be used as features for ML models. The pedagogical goal is to put a modern, data-driven spin on Linus Pauling’s 1929 study of binary compounds. In 1929, Pauling famously attempted to rationalize crystal structures of equiatomic binary compounds using simple rules based on atomic properties . This project revisits that idea with modern feature engineering and machine learning: we use a rich set of element-derived features to see if we can cluster and classify binary **AB** compounds (where A and B are elements) into their correct structure types (CsCl, NaCl, or ZnS). By combining Pauling’s early intuition with today’s ML tools, users will learn about **feature selection**, **unsupervised clustering vs. supervised classification**, and how to interpret ML results in chemical terms.
 
-# Getting started
-
-### Requirements
-
-Before running the project, make sure you have the following:
-* Python 3.9 or later (If you don’t have it, download it from [python.org](https://www.python.org))
-* Jupyter Lab (An interactive development environment for notebooks)
-* Git (Optional, if you want to clone the repository, otherwise you can download the ZIP file)
-* A modern web browser (Safari, Chrome, etc.)
-
-### Installation Steps
-
-1. **Install Python**
-* Download and install Python from the [official website](https://www.python.org). Follow the installer instructions for your operating system.
-2. **Install Jupyter Lab**
-* Open your terminal (or Command Prompt on Windows) and type the following command:
-```bash
-pip install jupyterlab
-```
-  
-3. **Download or Clone the Project**
-*  Option 1: Download ZIP  
-Download the project as a ZIP file from the repository page and extract it to a folder on your computer.
-
-* Option 2: Clone with Git  
-If you have Git installed, open your terminal and run:
-```bash
-git clone https://github.com/dshirya/pca-plsda-activity/tree/main
-```
-4. **Install Required Libraries**
-* Navigate to your project folder in the terminal:
-```bash
-cd path/to/your/project-folder
-```
-* Install all necessary libraries by running:
-
-```bash
-pip install -r requirements.txt
-```
-
-### Running the Project
-
-Once everything is installed, follow these steps to run the project:
-1.	Start Jupyter Lab: 
-In the terminal, make sure you are in the project folder and run:
-```bash
-jupyter lab
-```
-A web browser window will open showing the Jupyter Lab interface.
-
-2.	Open the Notebook:  
-In Jupyter Lab, locate and click on the notebook file (it will have the .ipynb extension).  
-Main files:
-    * ```pca-analysis.ipynb```
-    * ```pls_da-analysis.ipynb```
-
-4.	Run the Code Cells:  
-You can run each cell by clicking on it and pressing **Shift + Enter** or by clicking the “Run” button. Follow the instructions in the notebook to perform PCA and PLS-DA analyses.
-
 # Educational Goals and Methodology
 
 This project is built around a **hands-on, visual, and interactive learning experience** to help chemistry students understand the foundations of machine learning (ML) in a chemical context — specifically **dimensionality reduction**, **feature selection**, and **classification** of crystal structures. The educational activity is split into two parts — PCA and PLS-DA — each with its own methodology and objectives.
@@ -128,6 +69,64 @@ By the end of the activity, students should be able to:
 - See how **explainable ML** differs from black-box models and why that matters for science
 
 This approach merges **data science with chemical intuition**, empowering learners to analyze real-world problems with statistical tools while grounding their understanding in physical meaning.
+# Getting started
+
+### Requirements
+
+Before running the project, make sure you have the following:
+* Python 3.9 or later (If you don’t have it, download it from [python.org](https://www.python.org))
+* Jupyter Lab (An interactive development environment for notebooks)
+* Git (Optional, if you want to clone the repository, otherwise you can download the ZIP file)
+* A modern web browser (Safari, Chrome, etc.)
+
+### Installation Steps
+
+1. **Install Python**
+* Download and install Python from the [official website](https://www.python.org). Follow the installer instructions for your operating system.
+2. **Install Jupyter Lab**
+* Open your terminal (or Command Prompt on Windows) and type the following command:
+```bash
+pip install jupyterlab
+```
+  
+3. **Download or Clone the Project**
+*  Option 1: Download ZIP  
+Download the project as a ZIP file from the repository page and extract it to a folder on your computer.
+
+* Option 2: Clone with Git  
+If you have Git installed, open your terminal and run:
+```bash
+git clone https://github.com/dshirya/pca-plsda-activity/tree/main
+```
+4. **Install Required Libraries**
+* Navigate to your project folder in the terminal:
+```bash
+cd path/to/your/project-folder
+```
+* Install all necessary libraries by running:
+
+```bash
+pip install -r requirements.txt
+```
+
+### Running the Project
+
+Once everything is installed, follow these steps to run the project:
+1.	Start Jupyter Lab: 
+In the terminal, make sure you are in the project folder and run:
+```bash
+jupyter lab
+```
+A web browser window will open showing the Jupyter Lab interface.
+
+2.	Open the Notebook:  
+In Jupyter Lab, locate and click on the notebook file (it will have the .ipynb extension).  
+Main files:
+    * ```pca-analysis.ipynb```
+    * ```pls_da-analysis.ipynb```
+
+4.	Run the Code Cells:  
+You can run each cell by clicking on it and pressing **Shift + Enter** or by clicking the “Run” button. Follow the instructions in the notebook to perform PCA and PLS-DA analyses.
 
 
 # PCA Analysis Notebook (`pca-analysis.ipynb`)
