@@ -13,6 +13,8 @@ This project is built around a **hands-on, visual, and interactive learning expe
 
 In this activity, PCA (Principal Component Analysis) is used to construct a **data-driven periodic table**, leveraging a modern set of 74 numerical features — far more than were historically available. These include atomic, electronic, thermal, and DFT-derived properties.
 
+<img width="1200" alt="image" src="https://github.com/user-attachments/assets/ce43f996-e928-449b-a15b-cc5a920ef4da" />
+
 - Students use **interactive feature toggles** to include or exclude specific properties or whole categories.
 - By doing so, they observe **how different features reshape the PCA projection** of elements and how elements cluster differently.
 - This allows them to explore a modern reinterpretation of the periodic table based not on empirical arrangement but on statistical similarities in high-dimensional property space.
@@ -27,6 +29,9 @@ Additionally, the PCA notebook includes a **second visualization**: compounds fr
 ### PLS-DA and Visualization of Featurized Binary Compounds
 
 The PLS-DA notebook works with the **same compounds** as the PCA activity, but uses a **supervised learning approach**. All compounds are labeled by their structure type, and 133 features are generated using the **CAF (Composition Analyzer/Featurizer)** tool.
+
+<img width="900" alt="image" src="https://github.com/user-attachments/assets/ed4ea3ea-5f82-458c-b88a-5cb328841de6" />
+
 
 - The features include **averages, differences, ratios, max/min** values across properties like electronegativity, radius, etc.
 - These featurized compounds are visualized in a new feature space, and classification is attempted using PLS-DA.
