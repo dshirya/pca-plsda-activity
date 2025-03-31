@@ -108,3 +108,124 @@ All features are enabled by default, but students can **individually enable/disa
 - Does removing DFT-derived features still allow for structure-type clustering?
 
 Together, these two visualizations offer a rich, hands-on way for students to explore feature selection, dimensionality reduction, and chemical trends.
+
+## PLS-DA Analysis Notebook (`pls_da-analysis.ipynb`)
+
+This notebook introduces **Partial Least Squares–Discriminant Analysis (PLS-DA)**, a supervised machine learning method used to classify compounds into one of three structure types: **CsCl-type, NaCl-type, or ZnS-type**. In this exercise, all compounds already have class labels assigned, so the objective is to use data-driven features to train and interpret a classification model.
+
+The features used in this notebook are generated using the **Composition Analyzer/Featurizer (CAF)** [CAF GitHub](https://github.com/bobleesj/composition-analyzer-featurizer). This tool calculates **133 compositional descriptors** derived from elemental properties of the constituent atoms in each compound. These descriptors include operations such as **sums, differences, ratios, maximum, and minimum** values of physical and chemical properties like electronegativity, atomic radius, melting point, valence electron counts, and more.
+
+Like in the PCA notebook, students can **toggle features on and off**, exploring how different subsets of features affect structure clustering and classification accuracy. The ability to interactively control the features promotes intuition about the role each property plays in structure determination.
+
+---
+
+### Feature Selection (Manual and Automated)
+
+Because 133 features may be excessive for explainability and accuracy of PLS-DA, **feature selection** is an essential step in building explainable and generalizable models.
+
+#### Manual Feature Selection (Same Style as PCA)
+
+Just like in the PCA notebook, this PLS-DA activity provides students with an interactive way to perform **manual feature selection** using widgets. The interface allows users to select or deselect features one by one or by **predefined feature groups**, giving full control over the input space.
+
+Each group can be toggled on or off entirely, or users can go deeper and select individual features for inclusion in the PLS-DA model. This hands-on selection helps users explore the impact of specific types of features on classification performance and understand the **explainability** of the model.
+
+For example, users may explore:
+- Do radius difference and electronegativity difference alone suffice to separate the structures?
+- Does including all ratio features improve the model or introduce noise?
+
+This manual feature selection step promotes **active learning** and reinforces key machine learning concepts like **dimensionality**, **model simplicity**, and **feature relevance** in a chemical context.
+
+#### Automated Feature Selection
+This notebook provides both:
+- **Forward Selection**
+- **Backward Elimination**.
+
+These are wrapper methods that iteratively build or reduce the feature set, measuring model performance at each step.
+
+#### Forward Selection
+
+Starts with no features, then **adds features one-by-one**, each time choosing the one that most improves model performance. This continues until reaching the maximum number of features or performance plateaus.
+
+```python
+from pls_da.feature import forward_selection_plsda
+
+selected_feats, perf_hist = forward_selection_plsda(
+    filepath, 
+    target_column="Class", 
+    max_features=15,          # maximum number of features to select
+    n_components=2,           # number of PLS components to use in evaluation
+    scoring='accuracy',       # metric to optimize
+    verbose=True,             # print details of progress
+    visualize=True,           # show plots of performance vs. # features
+    interactive_scatter=True  # show 2D PLS score plot with selected features
+)
+print("Selected features via forward selection:", selected_feats)
+```
+
+You can modify:
+- `max_features`: limit how many features to include in final model
+- `n_components`: how many PLS components to use during selection
+- `scoring`: metric to optimize (e.g., `'accuracy'`, `'f1_macro'`)
+- `visualize` / `interactive_scatter`: show graphical results for better interpretation
+
+#### Backward Elimination
+
+Starts with all features, and **removes the least useful ones**, continuing until only a minimal core remains.
+
+```python
+from pls_da.feature import backward_elimination_plsda
+
+remaining_feats, perf_hist_back = backward_elimination_plsda(
+    filepath, 
+    target_column="Class", 
+    min_features=5,           # minimum number of features to keep
+    n_components=2, 
+    scoring='accuracy', 
+    verbose=True, 
+    visualize=True,
+    interactive_scatter=True
+)
+print("Remaining features via backward elimination:", remaining_feats)
+```
+
+You can modify:
+- `min_features`: minimum number of features allowed in final set
+- `scoring`, `n_components`, and visualization flags
+
+These two selection methods allow students to compare how **different strategies can lead to different feature sets**, giving insight into the **robustness and redundancy** of chemical descriptors.
+
+---
+
+### Evaluating Optimal Number of PLS Components
+
+The number of components used in PLS-DA greatly affects model performance. While the number of components **is not directly chosen by the user**, the notebook allows users to **evaluate performance for different numbers of components** to find the optimal choice.
+
+```python
+from pls_da.plsda import evaluate_n_components_plsda
+
+fig, scores = evaluate_n_components_plsda(
+    filepath, 
+    target_column="Class", 
+    scoring="accuracy",       # can be changed to f1, precision, etc.
+    max_components=15, 
+    verbose=False
+)
+```
+
+This function returns:
+- A plot showing how accuracy changes with the number of components
+- A dictionary of scores for each component count
+
+This helps students **choose a good balance between underfitting and overfitting**, a key concept in supervised learning.
+
+---
+
+### Summary of Student Actions in This Notebook
+
+- Load a dataset with 133 CAF-generated features and class labels
+- Toggle features manually to explore clustering
+- Run forward or backward feature selection to identify key descriptors
+- Evaluate optimal number of PLS components for classification
+- Visualize score plots, accuracy trends, and model predictions
+
+This interactive activity complements the PCA exercise and introduces **supervised dimensionality reduction**, **model validation**, and **explainable ML feature engineering** in an accessible way.
