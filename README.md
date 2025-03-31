@@ -1,9 +1,9 @@
 
-## Activity Overview
+# Activity Overview
 
 This repository provides an educational activity for chemistry students and professionals to learn basic machine learning techniques – specifically PCA and PLS-DA – in the context of inorganic chemistry. The activity uses **interactive Jupyter notebooks** to explore how elemental properties can be used as features for ML models. The pedagogical goal is to put a modern, data-driven spin on Linus Pauling’s 1929 study of binary compounds. In 1929, Pauling famously attempted to rationalize crystal structures of equiatomic binary compounds using simple rules based on atomic properties . This project revisits that idea with modern feature engineering and machine learning: we use a rich set of element-derived features to see if we can cluster and classify binary **AB** compounds (where A and B are elements) into their correct structure types (CsCl, NaCl, or ZnS). By combining Pauling’s early intuition with today’s ML tools, users will learn about **feature selection**, **unsupervised clustering vs. supervised classification**, and how to interpret ML results in chemical terms.
 
-## Getting started
+# Getting started
 
 ### Requirements
 
@@ -62,7 +62,75 @@ Main files:
 4.	Run the Code Cells:  
 You can run each cell by clicking on it and pressing **Shift + Enter** or by clicking the “Run” button. Follow the instructions in the notebook to perform PCA and PLS-DA analyses.
 
-## PCA Analysis Notebook (`pca-analysis.ipynb`)
+# Educational Goals and Methodology
+
+This project is built around a **hands-on, visual, and interactive learning experience** to help chemistry students understand the foundations of machine learning (ML) in a chemical context — specifically **dimensionality reduction**, **feature selection**, and **classification** of crystal structures. The educational activity is split into two parts — PCA and PLS-DA — each with its own methodology and objectives.
+
+---
+
+### PCA as a New Perspective on the Periodic Table
+
+In this activity, PCA (Principal Component Analysis) is used to construct a **data-driven periodic table**, leveraging a modern set of 74 numerical features — far more than were historically available. These include atomic, electronic, thermal, and DFT-derived properties.
+
+- Students use **interactive feature toggles** to include or exclude specific properties or whole categories.
+- By doing so, they observe **how different features reshape the PCA projection** of elements and how elements cluster differently.
+- This allows them to explore a modern reinterpretation of the periodic table based not on empirical arrangement but on statistical similarities in high-dimensional property space.
+
+Additionally, the PCA notebook includes a **second visualization**: compounds from Linus Pauling’s 1929 study are plotted onto the same PCA space, visualized as lines connecting constituent elements. The midpoint is marked, and compounds are colored by structure type (CsCl, NaCl, ZnS). This historical visualization allows students to explore:
+- Whether structural clusters emerge from Pauling-era data
+- How different subsets of properties impact separability
+- Which features might have been intuitively used by Pauling, and how ML confirms or expands on those ideas
+
+---
+
+### PLS-DA and Visualization of Featurized Binary Compounds
+
+The PLS-DA notebook works with the **same compounds** as the PCA activity, but uses a **supervised learning approach**. All compounds are labeled by their structure type, and 133 features are generated using the **CAF (Composition Analyzer/Featurizer)** tool.
+
+- The features include **averages, differences, ratios, max/min** values across properties like electronegativity, radius, etc.
+- These featurized compounds are visualized in a new feature space, and classification is attempted using PLS-DA.
+- Students do not manually set the number of components, but can **evaluate optimal component count** using a built-in function.
+- Most importantly, they can explore **which features are most important** for classification.
+
+---
+
+### Manual Feature Selection: An Interactive Learning Tool
+
+A key part of both PCA and PLS-DA activities is the inclusion of **interactive, manual feature selection**:
+
+- In **PCA**, students can toggle features or feature groups (e.g., radii, electronic structure) and immediately observe changes in clustering and separation on the PCA plot. This helps them build intuition about which properties matter most and how combinations of features affect element relationships.
+  
+- In **PLS-DA**, manual selection is similarly supported, allowing students to toggle features and evaluate classification behavior visually or through accuracy scores. They can first hypothesize, for example, “radius difference is important,” test this idea manually, and then compare their intuition to automated methods like forward or backward feature selection.
+
+This **interactive process reinforces active learning**. Students don’t just see a pre-trained model — they **build their own**, adjust parameters, and discover chemical patterns themselves. It mimics how scientists work: forming hypotheses, testing them, and analyzing outcomes.
+
+---
+
+### Automated Feature Selection and Model Evaluation
+
+To complement manual exploration, the PLS-DA notebook includes:
+- **Forward feature selection** – Start with no features and add one at a time to optimize model accuracy.
+- **Backward elimination** – Start with all features and remove the least helpful ones until reaching a minimum feature set.
+- **Optimal component evaluation** – Test model accuracy across different component counts to find a balance between underfitting and overfitting.
+
+Together, these tools introduce students to best practices in ML:
+- **Avoiding overfitting** by limiting features or components
+- **Explaining models** through smaller, meaningful feature subsets
+
+---
+
+### Conceptual Takeaways
+
+By the end of the activity, students should be able to:
+- Understand and explain **PCA** and **PLS-DA** from a chemical and ML perspective
+- Appreciate the importance of **feature selection** and **dimensionality reduction**
+- Recognize how **modern data** can be used to **revisit and validate historical chemical knowledge**
+- See how **explainable ML** differs from black-box models and why that matters for science
+
+This approach merges **data science with chemical intuition**, empowering learners to analyze real-world problems with statistical tools while grounding their understanding in physical meaning.
+
+
+# PCA Analysis Notebook (`pca-analysis.ipynb`)
 
 This notebook introduces Principal Component Analysis (PCA) as an exploratory tool, focusing on two main visualizations that build student understanding of how elemental properties can be used to infer compound behavior and classification.
 
@@ -109,7 +177,7 @@ All features are enabled by default, but students can **individually enable/disa
 
 Together, these two visualizations offer a rich, hands-on way for students to explore feature selection, dimensionality reduction, and chemical trends.
 
-## PLS-DA Analysis Notebook (`pls_da-analysis.ipynb`)
+# PLS-DA Analysis Notebook (`pls_da-analysis.ipynb`)
 
 This notebook introduces **Partial Least Squares–Discriminant Analysis (PLS-DA)**, a supervised machine learning method used to classify compounds into one of three structure types: **CsCl-type, NaCl-type, or ZnS-type**. In this exercise, all compounds already have class labels assigned, so the objective is to use data-driven features to train and interpret a classification model.
 
@@ -224,8 +292,13 @@ This helps students **choose a good balance between underfitting and overfitting
 
 - Load a dataset with 133 CAF-generated features and class labels
 - Toggle features manually to explore clustering
-- Run forward or backward feature selection to identify key descriptors
 - Evaluate optimal number of PLS components for classification
+- Run forward or backward feature selection to identify key descriptors
 - Visualize score plots, accuracy trends, and model predictions
 
 This interactive activity complements the PCA exercise and introduces **supervised dimensionality reduction**, **model validation**, and **explainable ML feature engineering** in an accessible way.
+
+
+
+
+
