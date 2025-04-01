@@ -92,7 +92,7 @@ def forward_selection_plsda(filepath, target_column='Class', max_features=None, 
         iteration += 1
         iterations_info.append((iteration, selected.copy(), base_score))
         if verbose:
-            print(f"Iteration {iteration}: Initial selected = {selected}, Score = {base_score:.4f}")
+            print(f"\n\033[1mIteration {iteration}\033[0m: \033[1mInitial selected\033[0m = {selected}, \033[1mScore\033[0m = {base_score:.4f}\n")
     else:
         base_score = -np.inf
 
@@ -118,7 +118,7 @@ def forward_selection_plsda(filepath, target_column='Class', max_features=None, 
             iteration += 1
             iterations_info.append((iteration, selected.copy(), best_score))
             if verbose:
-                print(f"Iteration {iteration}: Added '{best_candidate}', Selected = {selected}, Score = {best_score:.4f}")
+                print(f"\n\033[1mIteration {iteration}\033[0m: \033[1mAdded\033[0m  '{best_candidate}', \033[1mSelected\033[0m = {selected}, \033[1mScore = {best_score:.4f}\033[0m\n")
         else:
             break
 
@@ -133,7 +133,8 @@ def forward_selection_plsda(filepath, target_column='Class', max_features=None, 
         fig.update_layout(title="Forward Selection Performance",
                           xaxis_title="Number of Features",
                           yaxis_title=f"CV {scoring.capitalize()} Score",
-                          template="plotly_white")
+                          template="ggplot2",
+                          font=dict(size=18))
         fig.show()
     
     if interactive_scatter:
@@ -152,7 +153,7 @@ def forward_selection_plsda(filepath, target_column='Class', max_features=None, 
                 pls_df = pd.DataFrame(scores, columns=['Component1', 'Component2'])
                 pls_df['Class'] = target_data.reset_index(drop=True)
                 fig = create_scatter_plot(pls_df, pls1_percent, pls2_percent)
-                print(f"Iteration {iteration_val}: Features = {sel_feats} (Score = {score_val:.4f})")
+                print(f"\n\033[1mIteration {iteration_val}:\033[0m \n\033[1mFeatures\033[0m = {sel_feats} \n\033[1m(Score = {score_val:.4f})\033[0m")
                 fig.show()
         
         slider = widgets.IntSlider(value=0, min=0, max=len(iterations_info)-1, step=1, description='Step')
@@ -193,7 +194,7 @@ def backward_elimination_plsda(filepath, target_column='Class', min_features=1, 
     performance_history.append(best_score)
     iterations_info.append((iteration, current_features.copy(), best_score))
     if verbose:
-        print(f"Iteration {iteration}: All features, Score = {best_score:.4f}")
+        print(f"\n\033[1mIteration {iteration}:\033[0m All features, \033[1mScore = {best_score:.4f}\033[0m\n")
     
     while len(current_features) > min_features:
         best_score_after_removal = -np.inf
@@ -211,7 +212,7 @@ def backward_elimination_plsda(filepath, target_column='Class', min_features=1, 
             iteration += 1
             iterations_info.append((iteration, current_features.copy(), best_score))
             if verbose:
-                print(f"Iteration {iteration}: Removed '{feature_to_remove}', Remaining = {current_features}, Score = {best_score:.4f}")
+                print(f"\n\033[1mIteration {iteration}:\033[0m \033[1mRemoved\033[0m '{feature_to_remove}', \033[1mRemaining\033[0m = {current_features}, \033[1mScore = {best_score:.4f}\033[0m\n")
         else:
             break
 
@@ -227,7 +228,8 @@ def backward_elimination_plsda(filepath, target_column='Class', min_features=1, 
                           xaxis_title="Number of Features",
                           yaxis_title=f"CV {scoring.capitalize()} Score",
                           xaxis=dict(autorange='reversed'),
-                          template="plotly_white")
+                          template="ggplot2",
+                          font=dict(size=18))
         fig.show()
     
     if interactive_scatter:
@@ -244,7 +246,7 @@ def backward_elimination_plsda(filepath, target_column='Class', min_features=1, 
                 pls_df = pd.DataFrame(scores, columns=['Component1', 'Component2'])
                 pls_df['Class'] = target_data.reset_index(drop=True)
                 fig = create_scatter_plot(pls_df, pls1_percent, pls2_percent)
-                print(f"Iteration {iteration_val}: Features = {sel_feats} (Score = {score_val:.4f})")
+                print(f"\n\033[1mIteration {iteration_val}:\033[0m \033[1mFeatures\033[0m = {sel_feats} \033[1m(Score = {score_val:.4f})\033[0m")
                 fig.show()
         
         slider = widgets.IntSlider(value=0, min=0, max=len(iterations_info)-1, step=1, description='Step')

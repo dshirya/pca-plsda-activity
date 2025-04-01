@@ -238,7 +238,7 @@ def build_plsda_ui(all_features, update_plsda_func, plsda_df_container):
         toggle_all_button = widgets.Button(
             description="Toggle",
             button_style='primary',
-            layout=widgets.Layout(width='60px', height='25px', margin='5px')
+            layout=widgets.Layout(width='100px', height='25px', margin='5px')
         )
         def on_toggle_all_clicked(b, these_buttons=buttons):
             # If all are on, turn them off; otherwise, turn them all on.
@@ -383,16 +383,16 @@ def run_plsda_analysis(filepath, target_column='Class'):
             metrics_out = widgets.Output()
             
             with contrib_out:
-                print("Top 10 Feature Contributions:")
+                print("\033[1mTop 10 Feature Contributions:\033[0m")
                 display(top_contrib_df)
             
             with metrics_out:
-                print("Evaluation Metrics:\n")
-                print(f"Accuracy: {acc:.3f}")
-                print(f"F1 Score (macro): {f1:.3f}\n")
-                print(f"Silhouette Score: {sil:.3f}\n")
-                print(f"Fisher Discriminant Ratio: {fdr:.3f}\n")
-                print("Pairwise Class Distances:")
+                print("\033[1mEvaluation Metrics:\033[0m\n")
+                print(f"\033[1mAccuracy:\033[0m {acc:.3f}")
+                print(f"\033[1mF1 Score (macro):\033[0m {f1:.3f}\n")
+                print(f"\033[1mSilhouette Score:\033[0m {sil:.3f}\n")
+                print(f"\033[1mFisher Discriminant Ratio:\033[0m {fdr:.3f}\n")
+                print("\033[1mPairwise Class Distances:\033[0m")
                 for pair, dist in distances.items():
                     print(f"  {pair}: {dist:.3f}")
             

@@ -79,7 +79,7 @@ def run_pca_analysis(filepath):
             }).reset_index(drop=True)
             top_contrib_df.index += 1
 
-            print("\nTop 10 Feature Contributions:")
+            print("\n\033[1mTop 10 Feature Contributions:\033[0m")
             display(top_contrib_df)
 
             pca_df_container['pca_df'] = pca_df

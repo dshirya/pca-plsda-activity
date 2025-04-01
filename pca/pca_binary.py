@@ -8,7 +8,7 @@ from sklearn.preprocessing import StandardScaler
 
 def run_pca_analysis_structures(
     filepath: str,
-    structures_df: pd.DataFrame,
+    path_data: pd.DataFrame,
     structure_colors: dict = None,
     structure_markers: dict = None
 ):
@@ -26,6 +26,7 @@ def run_pca_analysis_structures(
         print(f"Error loading file: {e}")
         return
 
+    structures_df = pd.read_excel(path_data)
     data_clean = data.dropna(axis=1)  # drop columns with all-NaN
     numeric_data = data_clean.select_dtypes(include=['float64', 'int64']).copy()
     numeric_data.dropna(inplace=True)
@@ -138,7 +139,7 @@ def run_pca_analysis_structures(
         toggle_all_button = widgets.Button(
             description="Toggle",
             button_style='primary',
-            layout=widgets.Layout(width='60px', height='25px', margin='5px')
+            layout=widgets.Layout(width='100px', height='25px', margin='5px')
         )
         toggle_all_button.on_click(lambda b, these=buttons: on_toggle_all_clicked(b, these))
 
@@ -368,7 +369,7 @@ def run_pca_analysis_structures(
             }).reset_index(drop=True)
             top_contrib_df.index += 1
 
-            print("\nTop 10 Feature Contributions:")
+            print("\n\033[1mTop 10 Feature Contributions:\033[0m")
             display(top_contrib_df)
 
             # Store in containers so "Save" can see them

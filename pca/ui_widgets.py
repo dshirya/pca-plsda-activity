@@ -83,7 +83,7 @@ def build_pca_ui(all_features, update_pca_func,
         toggle_all_button = widgets.Button(
             description="Toggle",
             button_style='primary',
-            layout=widgets.Layout(width='60px', height='25px', margin='5px')
+            layout=widgets.Layout(width='100px', height='25px', margin='5px')
         )
         def on_toggle_all_clicked(b, these_buttons=buttons):
             if all(btn.value for btn in these_buttons):
