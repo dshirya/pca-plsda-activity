@@ -313,5 +313,13 @@ This interactive activity complements the PCA exercise and introduces **supervis
 
 
 
+# References
 
+1. Pauling, L. (1929). _The principles determining the structure of complex ionic crystals_. **J. Am. Chem. Soc.** **51**, 1010. (Linus Pauling’s original publication of his rules for crystal structures) .
+
+2. Jaffal, E. I., Lee, S., **Shiryaev, D.**, _et al._ (2025). _Composition and structure analyzer/featurizer for explainable machine-learning models to predict solid state structures_. **Digital Discovery, 4**, 548–560. (Introduces the generation of 133 compositional features (CAF) and their use in clustering structure types with ML) .
+
+3. BMC Bioinformatics – _So You Think You Can PLS-DA?_ (2019). [Link](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-019-3310-7). (Discussion of PLS-DA vs PCA, emphasizing PLS-DA as supervised PCA and cautions on overfitting) .
+
+4. Hautier, G., _et al._ (2020). _The limited predictive power of the Pauling rules_. **Angew. Chem. Int. Ed.** **59**, 7569–7573. (A modern analysis of Pauling’s rules; highlights that only ~13% of structures satisfy all rules, underscoring the need for more advanced predictive methods) .
 
