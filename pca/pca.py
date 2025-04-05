@@ -64,10 +64,10 @@ def create_scatter_plot(pca_df, group_colors, pc1_percent, pc2_percent):
         color="group",
         color_discrete_map=group_colors
     )
-    fig.update_traces(marker=dict(size=26, symbol="circle", opacity=0.6))
+    fig.update_traces(marker=dict(size=24, symbol="circle", opacity=0.6))
     fig.update_layout(
-        width=1200,
-        height=1200,
+        width=1000,
+        height=1000,
         xaxis=dict(scaleanchor='y', scaleratio=1),
         yaxis=dict(scaleanchor='x', scaleratio=1),
         showlegend=False,

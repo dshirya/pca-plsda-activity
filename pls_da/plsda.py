@@ -109,7 +109,7 @@ def create_scatter_plot(pls_df, pls1_percent, pls2_percent):
         template="ggplot2",
         color_discrete_map=color_map
     )
-    fig.update_traces(marker=dict(size=20, opacity=0.8))
+    fig.update_traces(marker=dict(size=26, opacity=0.8))
     fig.update_layout(width=900, height=800, showlegend=True, font=dict(size=18))
     return fig
 

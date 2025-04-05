@@ -275,15 +275,15 @@ def run_pca_analysis_structures(
                 },
                 template="ggplot2"
             )
-            fig.update_traces(marker=dict(size=26, opacity=0.3, color='rgb(2, 118, 8)'))
+            fig.update_traces(marker=dict(size=24, opacity=0.3, color='rgb(2, 118, 8)'))
 
             # Enforce same scale on x & y
             fig.update_layout(
                 xaxis=dict(scaleanchor='y', scaleratio=1),
                 yaxis=dict(scaleanchor='x', scaleratio=1),
-                width=1200,
-                height=1200,
-                title="Pauling PCA Analysis",
+                width=1000,
+                height=1000,
+                #title="Pauling PCA Analysis",
                 font=dict(size=18)
             )
 
