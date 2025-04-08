@@ -10,6 +10,7 @@ from sklearn.cross_decomposition import PLSRegression
 from sklearn.preprocessing import StandardScaler
 # Import evaluation metrics from your external file
 from pls_da.evaluation_metrics import accuracy_score, f1_score, silhouette_score_latent, fisher_ratio, pairwise_class_distances
+import plotly.io as pio
 
 # ====================================================
 # Data Loading and Preparation

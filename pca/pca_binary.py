@@ -286,7 +286,6 @@ def run_pca_analysis_structures(
                 #title="Pauling PCA Analysis",
                 font=dict(size=18)
             )
-
             # Prepare a set to track which structure types we've already
             # shown in the legend, so we only list each type once.
             used_structure_types = set()
@@ -347,7 +346,6 @@ def run_pca_analysis_structures(
                 )
 
                 used_structure_types.add(struct_type)
-
             fig.show()
 
             # compute contributions DataFrame
