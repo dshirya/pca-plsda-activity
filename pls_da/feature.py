@@ -7,7 +7,8 @@ from sklearn.preprocessing import StandardScaler
 from pls_da.evaluation_metrics import accuracy_score, f1_score
 import plotly.graph_objects as go
 from pls_da.plsda import load_and_prepare_data, perform_plsda, create_scatter_plot
-
+import ipywidgets as widgets
+from IPython.display import display, clear_output
 # -------------------------------
 # Helper: Evaluate a Feature Subset via 5‑fold CV
 # -------------------------------
@@ -134,13 +135,12 @@ def forward_selection_plsda(filepath, target_column='Class', max_features=None, 
                           xaxis_title="Number of Features",
                           yaxis_title=f"CV {scoring.capitalize()} Score",
                           template="ggplot2",
-                          font=dict(size=18))
+                          font=dict(size=26))
         fig.show()
     
     if interactive_scatter:
         # Build interactive slider to scroll through PLS‑DA scatter plots at each step.
-        import ipywidgets as widgets
-        from IPython.display import display, clear_output
+        
         scatter_out = widgets.Output()
         
         def update_scatter(step):
@@ -229,13 +229,11 @@ def backward_elimination_plsda(filepath, target_column='Class', min_features=1, 
                           yaxis_title=f"CV {scoring.capitalize()} Score",
                           xaxis=dict(autorange='reversed'),
                           template="ggplot2",
-                          font=dict(size=18))
+                          font=dict(size=26))
         fig.show()
     
     if interactive_scatter:
         # Build interactive slider to scroll through scatter plots for each elimination step.
-        import ipywidgets as widgets
-        from IPython.display import display, clear_output
         scatter_out = widgets.Output()
         
         def update_scatter(step):
