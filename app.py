@@ -8,7 +8,6 @@ from shinywidgets import output_widget, render_widget
 
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.metrics import accuracy_score, f1_score, silhouette_score
-from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 
@@ -20,11 +19,11 @@ import plotly.graph_objects as go
 # ——————————————
 # Load your fixed dataset
 # ——————————————
-df = pd.read_csv("data/1929_Mendeleev_features_binary.csv")
+df = pd.read_csv("data/features-binary.csv")
 
 label_col = "Class"  # exact name of your class column
 pca_data = "data/elemental-property-list.xlsx"
-cluster_data = "data/pauling.xlsx"
+cluster_data = "data/pauling-data.xlsx"
 
 elements_by_group = {
         "alkali_metals": ["Li", "Na", "K", "Rb", "Cs", "Fr"],
