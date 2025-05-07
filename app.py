@@ -1,4 +1,5 @@
 import re
+import os
 import random
 import pandas as pd
 import numpy as np
@@ -14,7 +15,7 @@ from sklearn.decomposition import PCA
 import plotly.express as px
 import plotly.graph_objects as go
 
-
+port = int(os.environ.get("PORT", 8080))
 
 # ——————————————
 # Load your fixed dataset
@@ -113,7 +114,7 @@ def evaluate_subset(X: pd.DataFrame,
 # Forward Selection on a DataFrame
 # -------------------------------
 def forward_selection_plsda_df(numeric_data, target_data,
-                              max_features=None, n_components=2, scoring='accuracy'):
+                              max_features=40, n_components=2, scoring='accuracy'):
     features = list(numeric_data.columns)
     remaining = features.copy()
     selected = []
@@ -1517,7 +1518,7 @@ def server(input, output, session):
 
     
     # ——————————————————————————————————————
-    # 1) CV vs # Components
+    # 1) Accuracy vs # Components
     # ——————————————————————————————————————
     @reactive.Calc
     @reactive.event(input.run_eval_n)
@@ -1548,7 +1549,7 @@ def server(input, output, session):
             name="Accuracy"
         ))
         fig.update_layout(
-            title="PLS-DA: CV Accuracy vs # Components",
+            title="PLS-DA: Accuracy vs # Components",
             xaxis_title="Components",
             yaxis_title="Accuracy",
             template="ggplot2",
@@ -1567,7 +1568,7 @@ def server(input, output, session):
         target  = df[label_col]
         return forward_selection_plsda_df(
             numeric, target,
-            max_features=None, n_components=2, scoring='accuracy'
+            max_features=40, n_components=2, scoring='accuracy'
         )
 
 
@@ -1577,23 +1578,24 @@ def server(input, output, session):
             fig = go.Figure()
             fig.update_layout(
                 title="Waiting to run forward selection…",
-                template="ggplot2", width=1200, height=300
+                template="ggplot2", width=800, height=300
             )
             return fig
 
         hist, _ = forward_res()
         # x from 1 to len(hist)
         fig = go.Figure(go.Scatter(
-            x=list(range(1, len(hist) + 1)),
+            x=list(range(2, len(hist) + 1)),
             y=hist,
             mode="lines+markers"
         ))
         fig.update_layout(
             title="Forward Selection Accuracy",
-            xaxis_title="Iteration",
+            xaxis_title="Number of Features",
             yaxis_title="Accuracy",
-            xaxis=dict(tickmode="linear", tick0=1, dtick=1),
-            template="ggplot2", width=1200, height=300
+            xaxis=dict(tickmode="linear", tick0=2, dtick=1),
+            template="ggplot2", width=800, height=300,
+            xaxis_range=[1, len(hist)+1] 
         )
         return fig
 
@@ -1657,7 +1659,7 @@ def server(input, output, session):
 
         fig = px.scatter(
             df_sc, x="Component1", y="Component2", color="Class",
-            template="ggplot2", title=f"Iteration {it}", color_discrete_map=cmap
+            template="ggplot2", title=f"{it+1} Features", color_discrete_map=cmap
         )
         fig.update_traces(marker=dict(size=26, opacity=0.8))
         fig.update_layout(width=600, height=500)
@@ -1674,7 +1676,9 @@ def server(input, output, session):
         target  = df[label_col]
         return backward_elimination_plsda_df(
             numeric, target,
-            min_features=1, n_components=2, scoring='accuracy'
+            min_features=120, 
+            n_components=2, 
+            scoring='accuracy'
         )
 
 
@@ -1684,7 +1688,7 @@ def server(input, output, session):
             fig = go.Figure()
             fig.update_layout(
                 title="Waiting to run backward selection…",
-                template="ggplot2", width=1200, height=300
+                template="ggplot2", width=800, height=300
             )
             return fig
 
@@ -1699,7 +1703,7 @@ def server(input, output, session):
             xaxis_title="Iteration",
             yaxis_title="Accuracy",
             xaxis=dict(tickmode="linear", tick0=1, dtick=1),
-            template="ggplot2", width=1200, height=300
+            template="ggplot2", width=800, height=300
         )
         return fig
 
@@ -1761,7 +1765,7 @@ def server(input, output, session):
 
         fig = px.scatter(
             df_sc, x="Component1", y="Component2", color="Class",
-            template="ggplot2", title=f"Iteration {it}", color_discrete_map=cmap
+            template="ggplot2", title=f"{133 - it} Features", color_discrete_map=cmap
         )
         fig.update_traces(marker=dict(size=26, opacity=0.8))
         fig.update_layout(width=600, height=500)
@@ -1770,3 +1774,6 @@ def server(input, output, session):
 # Run the app
 # ——————————————
 app = App(app_ui, server)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=port)
