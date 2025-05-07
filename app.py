@@ -168,13 +168,21 @@ def backward_elimination_plsda_df(numeric_data, target_data,
                                  min_features=1, n_components=2, scoring='accuracy'):
     current = list(numeric_data.columns)
     performance_history = []
-    iterations_info = []
-    iteration = 0
+    iterations_info   = []
 
-    best_score = evaluate_subset(numeric_data, target_data, current,
-                                  n_components=n_components, scoring=scoring)
+    # --- INITIAL ENTRY ---
+    best_score = evaluate_subset(
+        numeric_data,            # your X-matrix
+        target_data,             # your y-vector
+        current,                 # the full feature list
+        n_components=n_components,
+        scoring=scoring
+        )
     performance_history.append(best_score)
-    iterations_info.append((iteration, current.copy(), best_score))
+    iterations_info.append(
+        # was (iteration, …); now store number of features
+        (len(current), current.copy(), best_score)
+    )
 
     while len(current) > min_features:
         best_after, feat_to_remove = -np.inf, None
@@ -188,8 +196,11 @@ def backward_elimination_plsda_df(numeric_data, target_data,
             current.remove(feat_to_remove)
             best_score = best_after
             performance_history.append(best_score)
-            iteration += 1
-            iterations_info.append((iteration, current.copy(), best_score))
+
+            # record NEW feature count, not an iteration counter
+            iterations_info.append(
+                (len(current), current.copy(), best_score)
+            )
         else:
             break
 
@@ -1606,7 +1617,7 @@ def server(input, output, session):
             return "Forward selection not run yet."
         _, iters = forward_res()
         return "\n".join(
-            f"Iter {it}: sel={sel}, score={sc:.4f}"
+            f"Step {it} | Features : {it+1} | sel={sel}, score={sc:.4f}"
             for it, sel, sc in iters
         )
 
@@ -1661,7 +1672,7 @@ def server(input, output, session):
             df_sc, x="Component1", y="Component2", color="Class",
             template="ggplot2", title=f"{it+1} Features", color_discrete_map=cmap
         )
-        fig.update_traces(marker=dict(size=26, opacity=0.8))
+        fig.update_traces(marker=dict(size=26, opacity=0.6))
         fig.update_layout(width=600, height=500)
         return fig
 
@@ -1692,61 +1703,69 @@ def server(input, output, session):
             )
             return fig
 
-        hist, _ = backward_res()
+        hist, iters = backward_res()
+        counts = [n for n,_,_ in iters]
+
         fig = go.Figure(go.Scatter(
-            x=list(range(1, len(hist) + 1)),
+            x=counts,
             y=hist,
             mode="lines+markers"
         ))
         fig.update_layout(
             title="Backward Elimination Accuracy",
-            xaxis_title="Iteration",
+            xaxis_title="Number of Features",
             yaxis_title="Accuracy",
-            xaxis=dict(tickmode="linear", tick0=1, dtick=1),
-            template="ggplot2", width=800, height=300
+            template="ggplot2", width=800, height=300,
+            # ← replace your old xaxis=… here with:
+            xaxis=dict(
+                autorange='reversed',      # ← flip the direction
+                tickmode='linear',
+                tick0=min(counts),
+                dtick=1
+            )
         )
         return fig
-
 
     @render.text
     def backward_log():
         if input.run_backward() < 1:
             return "Backward selection not run yet."
         _, iters = backward_res()
+
         return "\n".join(
-            f"Iter {it}: kept={feats}, score={sc:.4f}"
-            for it, feats, sc in iters
+            f"Step {i+1} | Features : {nfeat} | sel={feats}, score={sc:.4f}"
+            for i, (nfeat, feats, sc) in enumerate(iters)
         )
 
 
     @render.ui
     def backward_slider_ui():
-        if input.run_backward() < 1:
-            return ui.input_slider(
-                "backward_step", "Step",
-                min=1, max=1, value=1, step=1
-            )
-        hist, _ = backward_res()
-        n = len(hist)
-        return ui.input_slider(
-            "backward_step", "Step",
-            min=1, max=n, value=1, step=1
-        )
+        _, iters = backward_res()
+        counts   = [n for n, _, _ in iters]
+        high, low = max(counts), min(counts)
 
+        return ui.input_slider(
+            "backward_step", "Features",
+            # left edge = high count, right = low count
+            min=low,
+            max=high,
+            value=high,
+            step=-1
+        )
 
     @render_widget
     def backward_scatter_plot():
         if input.run_backward() < 1:
             fig = go.Figure()
-            fig.update_layout(
-                title="…waiting for backward selection…",
-                width=600, height=500
-            )
+            fig.update_layout(title="…waiting for backward selection…", width=600, height=500)
             return fig
 
         _, iters = backward_res()
-        idx = input.backward_step() - 1
-        it, feats, sc = iters[idx]
+        counts = [n for n,_,_ in iters]
+        sel = input.backward_step()
+        idx = counts.index(sel)
+
+        nfeat, feats, sc = iters[idx]
 
         X = StandardScaler().fit_transform(df[feats])
         Y = pd.get_dummies(df[label_col])
@@ -1755,19 +1774,16 @@ def server(input, output, session):
         df_sc = pd.DataFrame(scores, columns=["Component1", "Component2"])
         df_sc["Class"] = df[label_col].values
 
-        cmap = {
-            cl: c for cl,c in zip(
-                sorted(df_sc["Class"].unique()),
-                ["#c3121e","#0348a1","#ffb01c","#027608",
-                 "#1dace6","#9c5300","#9966cc","#ff4500"]
-            )
-        }
+        cmap = {cl: c for cl, c in zip(sorted(df_sc["Class"].unique()), [
+            "#c3121e","#0348a1","#ffb01c","#027608",
+            "#1dace6","#9c5300","#9966cc","#ff4500"
+        ])}
 
         fig = px.scatter(
             df_sc, x="Component1", y="Component2", color="Class",
-            template="ggplot2", title=f"{133 - it} Features", color_discrete_map=cmap
+            template="ggplot2", title=f"{nfeat} Features", color_discrete_map=cmap
         )
-        fig.update_traces(marker=dict(size=26, opacity=0.8))
+        fig.update_traces(marker=dict(size=26, opacity=0.6))
         fig.update_layout(width=600, height=500)
         return fig
 # ——————————————
