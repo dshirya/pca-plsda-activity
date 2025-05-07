@@ -1,8 +1,0 @@
-numpy
-pandas
-scikit-learn
-plotly
-ipywidgets
-ipython
-openpyxl
-nbformat
