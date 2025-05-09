@@ -22,8 +22,8 @@ port = int(os.environ.get("PORT", 8080))
 # Load your fixed dataset
 # ——————————————
 df = pd.read_csv("data/features-binary.csv")
-
 label_col = "Class"  # exact name of your class column
+
 pca_data = "data/elemental-property-list.xlsx"
 cluster_data = "data/pauling-data.xlsx"
 
@@ -76,7 +76,6 @@ symbol_to_group = {
 # Helper functions
 # ————————————————————————
 
-# Helper to turn any string into a valid Shiny ID
 def make_safe_id(name: str) -> str:
     # first give / and + unique replacements
     s = name.replace("/", "_slash_").replace("+", "_plus_")
@@ -89,12 +88,12 @@ def make_safe_id(name: str) -> str:
 
 # Helper: Evaluate a Feature Subset via 5-fold CV
 def evaluate_subset(
-    X: pd.DataFrame,
-    y: pd.Series,
-    selected_features: list[str],
-    n_components: int = 2,
-    scoring: str = "accuracy"
-) -> float:
+        X: pd.DataFrame,
+        y: pd.Series,
+        selected_features: list[str],
+        n_components: int = 2,
+        scoring: str = "accuracy"
+    ) -> float:
     # 1) slice
     X_sub = X[selected_features].copy()
 
@@ -780,21 +779,13 @@ feature_groups_cluster = {
 # ——————————————
 # Build controls
 # ——————————————
-# Action buttons
-controls_row_plsda = ui.div(
-    ui.input_action_button("select_all",   "Select All"),
-    ui.input_action_button("deselect_all", "Deselect All"),
-    style="display:flex; gap:8px; margin-bottom:12px;"
-)
 # at the top of your UI-building code:
 default_pls_feats = {
     "Pauling_radius_CN12_A/B",
     "atomic_weight_weighted_A+B"
 }
 
-
-
-feature_cards = []
+feature_cards_plsda = []
 for gid, info in feature_groups_plsda.items():
     # 1) Build feature‐level checkboxes
     checks = []
@@ -803,19 +794,16 @@ for gid, info in feature_groups_plsda.items():
             ui.input_checkbox(
                 f"feat_{make_safe_id(col)}",
                 disp,
-                value=(col in default_pls_feats),  # only your two defaults = True
+                value=(col in default_pls_feats),
             )
         )
-
-    # 2) Group default = True only if *all* its features are in the defaults set
     group_default = all(col in default_pls_feats for _, col in info["features"])
 
-    # 3) Header with that computed default
     header = ui.card_header(
         ui.div(
             ui.input_checkbox(
                 f"group_{gid}",
-                "",             # no label text here
+                "",            
                 value=group_default,
                 width="2em"
             ),
@@ -825,7 +813,7 @@ for gid, info in feature_groups_plsda.items():
         style="font-size:1em;"
     )
 
-    feature_cards.append(
+    feature_cards_plsda.append(
         ui.card(
             header,
             *checks,
@@ -833,26 +821,24 @@ for gid, info in feature_groups_plsda.items():
         )
     )
 
-# now split into 4 roughly‐equal columns of cards
-n_cards = len(feature_cards)
+n_cards = len(feature_cards_plsda)
 chunk = -(-n_cards // 4)
-cards_pls_col1 = feature_cards[0:chunk]
-cards_pls_col2 = feature_cards[chunk:2*chunk]
-cards_pls_col3 = feature_cards[2*chunk:3*chunk]
-cards_pls_col4 = feature_cards[3*chunk:]
+cards_pls_col1 = feature_cards_plsda[0:chunk]
+cards_pls_col2 = feature_cards_plsda[chunk:2*chunk]
+cards_pls_col3 = feature_cards_plsda[2*chunk:3*chunk]
+cards_pls_col4 = feature_cards_plsda[3*chunk:]
 
-i = 1   # for example, the second card in column 3
+i = 1   
 moved = cards_pls_col3.pop(i)
 cards_pls_col4.append(moved)
 
 feature_cards_pca = []
 for gid, info in feature_groups_pca.items():
-    # Group‐level checkbox + label in the header
     header = ui.card_header(
         ui.div(
             ui.input_checkbox(
-                f"pca_group_{gid}",  # group toggle ID
-                "",                  # no visible label
+                f"pca_group_{gid}",  
+                "",                  
                 value=True,
                 width="2em",
             ),
@@ -861,7 +847,6 @@ for gid, info in feature_groups_pca.items():
         ),
         style="font-size:1em;"
     )
-
     # One checkbox per feature in this group
     checks = [
         ui.input_checkbox(
@@ -883,10 +868,10 @@ for gid, info in feature_groups_pca.items():
 # Now split into four roughly‐equal columns
 n = len(feature_cards_pca)
 chunk = -(-n // 4)
-cards_pca_col1 = feature_cards_pca[        :chunk]
-cards_pca_col2 = feature_cards_pca[   chunk :2*chunk]
-cards_pca_col3 = feature_cards_pca[2*chunk :3*chunk]
-cards_pca_col4 = feature_cards_pca[3*chunk :      ]
+cards_pca_col1 = feature_cards_pca[:chunk]
+cards_pca_col2 = feature_cards_pca[chunk:2*chunk]
+cards_pca_col3 = feature_cards_pca[2*chunk:3*chunk]
+cards_pca_col4 = feature_cards_pca[3*chunk:]
 
 feature_cards_cluster = []
 for gid, info in feature_groups_cluster.items():
@@ -918,10 +903,10 @@ for gid, info in feature_groups_cluster.items():
 # split into four columns exactly as you did before
 n = len(feature_cards_cluster)
 chunk = -(-n // 4)
-cards_cluster_col1 = feature_cards_cluster[         :chunk]
-cards_cluster_col2 = feature_cards_cluster[    chunk:2*chunk]
+cards_cluster_col1 = feature_cards_cluster[:chunk]
+cards_cluster_col2 = feature_cards_cluster[chunk:2*chunk]
 cards_cluster_col3 = feature_cards_cluster[2*chunk:3*chunk]
-cards_cluster_col4 = feature_cards_cluster[3*chunk:       ]
+cards_cluster_col4 = feature_cards_cluster[3*chunk:]
 
 # ——————————————
 # UI definition
@@ -1000,7 +985,17 @@ app_ui = ui.page_fluid(
                 "Visualization",
                     ui.layout_sidebar(
                         ui.sidebar(
-                            controls_row_plsda,
+                            ui.div(
+                                ui.input_action_button(
+                                    "select_all",   
+                                    "Select All"
+                                ),
+                                ui.input_action_button(
+                                    "deselect_all", 
+                                    "Deselect All"
+                                ),
+                                style="display:flex; gap:8px; margin-bottom:12px;"
+                            ),
                             ui.row(
                                 ui.column(3, *cards_pls_col1),
                                 ui.column(3, *cards_pls_col2),
@@ -1120,12 +1115,12 @@ def server(input, output, session):
       gid: all(col in default_pls_feats for _, col in info["features"])
       for gid, info in feature_groups_plsda.items()
     }
-    # ——————————————
 
+
+    # ——————————————
     # PCA calculation
-
     # ——————————————
-    # Select/Deselect all groups
+
     @reactive.Effect
     @reactive.event(input.pca_select_all)
     def select_all():
@@ -1251,7 +1246,9 @@ def server(input, output, session):
             },
             template="ggplot2"
         )
-        fig.update_traces(marker=dict(size=26, opacity=0.6))
+        fig.update_traces(marker=dict(
+                                    size=26, 
+                                    opacity=0.6))
         fig.update_layout(
             xaxis=dict(scaleanchor="y", scaleratio=1),
             yaxis=dict(scaleanchor="x", scaleratio=1),
@@ -1384,14 +1381,30 @@ def server(input, output, session):
         res = clust_res()
         if not res:
             fig = go.Figure()
-            fig.update_layout(title="No data",
-                              width=800, height=830
-                              )
+            fig.update_layout(
+                title="No data",
+                width=800, 
+                height=830
+            )
             return fig
 
         dfp = res["dfp"]
-        fig = px.scatter(dfp, x="PC1", y="PC2", text="Symbol", template="ggplot2", width=800, height=830)
-        fig.update_traces(marker=dict(color="green", size=12, opacity=0.6))
+        fig = px.scatter(
+            dfp, 
+            x="PC1", 
+            y="PC2", 
+            text="Symbol", 
+            template="ggplot2", 
+            width=800, 
+            height=830
+        )
+        fig.update_traces(
+            marker=dict(
+                color="green", 
+                size=12, 
+                opacity=0.6
+            )
+        )
 
         # colour map for your three structure types
         cmap = {
@@ -1399,7 +1412,12 @@ def server(input, output, session):
             "NaCl": "#0348a1",
             "ZnS":  "#ffb01c",  
         }
-        fig.update_traces(marker=dict(size=26, opacity=0.6))
+        fig.update_traces(
+            marker=dict(
+                size=26, 
+                opacity=0.6
+            )
+        )
         seen = set()
         for link in res["links"]:
             struct = link["struct"]
@@ -1632,7 +1650,12 @@ def server(input, output, session):
             template="ggplot2",
             color_discrete_map=cmap
         )
-        fig.update_traces(marker=dict(size=26, opacity=0.8))
+        fig.update_traces(
+            marker=dict(
+                size=26, 
+                opacity=0.8
+            )
+        )
         fig.update_layout(
             margin=dict(l=20, r=20, t=30, b=20),
             font=dict(size=18),
@@ -1640,17 +1663,21 @@ def server(input, output, session):
             height=830,
             showlegend=True,
 
-            # 1) position the whole legend box
             legend_orientation="h",
-            legend_x=0.5,         # center horizontally
+            legend_x=0.5,         
             legend_xanchor="center",
-            legend_y=1.02,         # push above the plotting area
+            legend_y=1.02,         
             legend_yanchor="bottom",
             legend_title_side="top center"
         )
 
-        fig.update_yaxes(scaleanchor="x", scaleratio=1)
-        fig.update_xaxes(constrain="domain")
+        fig.update_yaxes(
+            scaleanchor="x", 
+            scaleratio=1
+        )
+        fig.update_xaxes(
+            constrain="domain"
+        )
         return fig
 
     # ——————————————
@@ -1787,9 +1814,14 @@ def server(input, output, session):
     def forward_log():
         if input.run_forward() < 1:
             # empty skeleton until run
-            return pd.DataFrame(columns=[
-                'step', 'total_features', 'feature_added', 'accuracy'
-            ])
+            return pd.DataFrame(
+                        columns=[
+                            'step', 
+                            'total_features', 
+                            'feature_added', 
+                            'accuracy'
+                        ]
+                    )
         return forward_res()
 
     # ─────────────────────────────────────────────────────────────────────────────
@@ -1803,7 +1835,10 @@ def server(input, output, session):
             return ui.input_slider(
                 "forward_step", 
                 "Features",
-                min=2, max=2, value=2, step=1
+                min=2, 
+                max=2, 
+                value=2, 
+                step=1
             )
 
         df_steps = forward_res()
@@ -1879,7 +1914,12 @@ def server(input, output, session):
             title=f"{selected_n} Features",
             color_discrete_map=cmap
         )
-        fig.update_traces(marker=dict(size=26, opacity=0.6))
+        fig.update_traces(
+            marker=dict(
+                size=26, 
+                opacity=0.6
+            )
+        )
         fig.update_layout(
             width=500,
             height=400,
@@ -1939,9 +1979,14 @@ def server(input, output, session):
     def backward_log():
         # show the full elimination log as a table
         if input.run_backward() < 1:
-            return pd.DataFrame(columns=[
-                'step','accuracy','feature_removed','total_features'
-            ])
+            return pd.DataFrame(
+                        columns=[
+                            'step',
+                            'accuracy',
+                            'feature_removed',
+                            'total_features'
+                        ]
+                    )
         return backward_res()
     
     @render.text
@@ -1967,7 +2012,8 @@ def server(input, output, session):
         counts = df_steps['total_features'].tolist()
         low, high = min(counts), max(counts)
         return ui.input_slider(
-            "backward_step", "Features",
+            "backward_step", 
+            "Features",
             min=low,
             max=high,
             value=high,
@@ -2023,7 +2069,12 @@ def server(input, output, session):
             title=f"{len(current_feats)} Features",
             color_discrete_map=cmap
         )
-        fig.update_traces(marker=dict(size=26, opacity=0.6))
+        fig.update_traces(
+            marker=dict(
+                size=26, 
+                opacity=0.6
+            )
+        )
         fig.update_layout(
             width=500, 
             height=400, 
