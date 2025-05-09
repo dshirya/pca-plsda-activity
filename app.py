@@ -1,6 +1,7 @@
 import re
 import os
 import random
+import warnings
 import pandas as pd
 import numpy as np
 
@@ -87,136 +88,230 @@ def make_safe_id(name: str) -> str:
     return safe
 
 # Helper: Evaluate a Feature Subset via 5-fold CV
-def evaluate_subset(X: pd.DataFrame,
-                    y: pd.Series,
-                    selected_features: list[str],
-                    n_components: int = 2,
-                    scoring: str = "accuracy") -> float:
-
-    # turn your list into a DataFrame slice
+def evaluate_subset(
+    X: pd.DataFrame,
+    y: pd.Series,
+    selected_features: list[str],
+    n_components: int = 2,
+    scoring: str = "accuracy"
+) -> float:
+    # 1) slice
     X_sub = X[selected_features].copy()
 
-    # **DROP any columns whose std == 0**
+    # 2) drop zero-variance
     zero_var = X_sub.std(axis=0) == 0
     if zero_var.any():
         X_sub = X_sub.loc[:, ~zero_var]
+
+    # 3) still enough for PLS?
     if X_sub.shape[1] < n_components:
-        # not enough features to even form n_components
         return np.nan
 
-    # now scale safely
+    # 4) scale and clean any NaN/∞
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X_sub)
+    X_scaled = np.nan_to_num(X_scaled, nan=0.0, posinf=0.0, neginf=0.0)
 
-    # 2) One‐hot encode y and fit PLS
+    # 5) one-hot encode
     Y_dummy = pd.get_dummies(y)
-    pls = PLSRegression(n_components=n_components, scale=False)
-    pls.fit(X_scaled, Y_dummy)
 
-    # 3) Predict on the same data
-    y_pred_cont = pls.predict(X_scaled)
+    pls = PLSRegression(n_components=n_components, scale=False)
+    # 6) suppress the runtime warnings during fit
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        try:
+            pls.fit(X_scaled, Y_dummy)
+        except Exception:
+            return np.nan
+
+    # 7) predict
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        try:
+            y_pred_cont = pls.predict(X_scaled)
+        except Exception:
+            return np.nan
+
+    # 8) class via argmax
     idxs = np.argmax(y_pred_cont, axis=1)
     preds = [Y_dummy.columns[i] for i in idxs]
 
-    # 4) Compute the requested metric
+    # 9) score
     if scoring == "accuracy":
         return accuracy_score(y, preds)
     else:
         return f1_score(y, preds, average="macro")
 
 
-# Forward Selection on a DataFrame
-def forward_selection_plsda_df(numeric_data, target_data,
-                              max_features=40, n_components=2, scoring='accuracy'):
-    features = list(numeric_data.columns)
-    remaining = features.copy()
-    selected = []
-    performance_history = []
-    iterations_info = []  # (iteration, selected, score)
+def forward_selection_plsda_df(
+    numeric_data: pd.DataFrame,
+    target_data: pd.Series,
+    n_components: int = 2,
+    plateau_steps: int = 10,
+    init_features: list[str] | None = None,
+    scoring: str = "accuracy"
+    ) -> pd.DataFrame:
+    """
+    Greedy forward PLS-DA feature selection with plateau stopping.
+    
+    - numeric_data: DataFrame of X.
+    - target_data: Series of y.
+    - n_components: number of PLS components (passed to evaluate_subset).
+    - plateau_steps: stop after this many additions without any accuracy gain.
+    - init_features: optional list of features to start with.
+    
+    Assumes evaluate_subset(X, y, feats, n_components, scoring) is defined elsewhere.
+    """
+    all_feats = list(numeric_data.columns)
+    remaining = all_feats.copy()
+    selected: list[str] = []
+    records: list[dict] = []
+
     iteration = 0
+    best_score = -np.inf
+    plateau_count = 0
 
-    # initialize if n_components > 1
-    if n_components > 1:
-        init = random.sample(remaining, n_components)
-        for feat in init:
-            remaining.remove(feat)
-        selected.extend(init)
-        base_score = evaluate_subset(numeric_data, target_data, selected,
-                                      n_components=n_components, scoring=scoring)
-        performance_history.append(base_score)
+    # --- INITIAL SEEDING ---
+    if init_features:
+        for f in init_features:
+            if f not in remaining:
+                raise ValueError(f"init_features contains '{f}', which is not in numeric_data.")
+            remaining.remove(f)
+        selected = init_features.copy()
+        best_score = evaluate_subset(numeric_data, target_data, selected,
+                                     n_components=n_components, scoring=scoring)
         iteration += 1
-        iterations_info.append((iteration, selected.copy(), base_score))
-    else:
-        base_score = -np.inf
+        records.append({
+            'step': iteration,
+            'accuracy': best_score,
+            'feature_added': ','.join(init_features),
+            'total_features': len(selected)
+        })
+    elif n_components > 1:
+        # random seed of size n_components
+        seed = random.sample(remaining, n_components)
+        for f in seed:
+            remaining.remove(f)
+        selected = seed.copy()
+        best_score = evaluate_subset(numeric_data, target_data, selected,
+                                     n_components=n_components, scoring=scoring)
+        iteration += 1
+        records.append({
+            'step': iteration,
+            'accuracy': best_score,
+            'feature_added': ','.join(seed),
+            'total_features': len(selected)
+        })
 
-    best_score = base_score
-
-    # greedy forward
-    while remaining and (max_features is None or len(selected) < max_features):
+    # --- GREEDY FORWARD WITH PLATEAU STOPPING ---
+    while remaining:
+        # find best single feature to add
         best_cand, best_cand_score = None, -np.inf
         for feat in random.sample(remaining, len(remaining)):
             trial = selected + [feat]
-            if len(trial) < n_components: 
+            if len(trial) < n_components:
                 continue
             s = evaluate_subset(numeric_data, target_data, trial,
-                                 n_components=n_components, scoring=scoring)
+                                n_components=n_components, scoring=scoring)
             if s > best_cand_score:
                 best_cand_score, best_cand = s, feat
-        if best_cand is not None and best_cand_score >= best_score:
-            remaining.remove(best_cand)
-            selected.append(best_cand)
-            best_score = best_cand_score
-            performance_history.append(best_score)
-            iteration += 1
-            iterations_info.append((iteration, selected.copy(), best_score))
-        else:
+
+        # only add if it doesn’t drop below current best
+        if best_cand is None or best_cand_score < best_score:
             break
 
-    return performance_history, iterations_info
+        # plateau logic
+        if best_cand_score == best_score:
+            plateau_count += 1
+        else:
+            plateau_count = 0
+
+        remaining.remove(best_cand)
+        selected.append(best_cand)
+        iteration += 1
+        records.append({
+            'step': iteration,
+            'accuracy': best_cand_score,
+            'feature_added': best_cand,
+            'total_features': len(selected)
+        })
+
+        # update best_score if improved
+        if best_cand_score > best_score:
+            best_score = best_cand_score
+
+        # stop if plateau too long
+        if plateau_count >= plateau_steps:
+            break
+
+    return pd.DataFrame.from_records(records)
 
 
-# Backward Elimination on a DataFrame
-def backward_elimination_plsda_df(numeric_data, target_data,
-                                 min_features=1, n_components=2, scoring='accuracy'):
+def backward_elimination_plsda_df(
+    numeric_data: pd.DataFrame,
+    target_data: pd.Series,
+    min_features: int = 1,
+    n_components: int = 2,
+    scoring: str = "accuracy"
+) -> pd.DataFrame:
+    """
+    Greedy backward elimination PLS-DA down to `min_features`.
+    Returns a DataFrame with columns:
+      - step
+      - accuracy
+      - feature_removed
+      - total_features
+    """
+    # Start with all features
     current = list(numeric_data.columns)
-    performance_history = []
-    iterations_info   = []
+    records: list[dict] = []
+    iteration = 0
 
-    # --- INITIAL ENTRY ---
+    # Evaluate the full set
     best_score = evaluate_subset(
-        numeric_data,            # your X-matrix
-        target_data,             # your y-vector
-        current,                 # the full feature list
-        n_components=n_components,
-        scoring=scoring
-        )
-    performance_history.append(best_score)
-    iterations_info.append(
-        # was (iteration, …); now store number of features
-        (len(current), current.copy(), best_score)
+        numeric_data, target_data, current,
+        n_components=n_components, scoring=scoring
     )
+    records.append({
+        "step": iteration,
+        "accuracy": best_score,
+        "feature_removed": "",
+        "total_features": len(current)
+    })
 
+    # Greedy elimination loop
     while len(current) > min_features:
-        best_after, feat_to_remove = -np.inf, None
+        best_after = -np.inf
+        feat_to_remove = None
+
+        # Try removing each feature
         for feat in random.sample(current, len(current)):
             trial = [f for f in current if f != feat]
-            s = evaluate_subset(numeric_data, target_data, trial,
-                                 n_components=n_components, scoring=scoring)
+            if len(trial) < n_components:
+                continue
+            s = evaluate_subset(
+                numeric_data, target_data, trial,
+                n_components=n_components, scoring=scoring
+            )
             if s > best_after:
                 best_after, feat_to_remove = s, feat
-        if feat_to_remove and best_after >= best_score:
-            current.remove(feat_to_remove)
-            best_score = best_after
-            performance_history.append(best_score)
 
-            # record NEW feature count, not an iteration counter
-            iterations_info.append(
-                (len(current), current.copy(), best_score)
-            )
-        else:
+        # If no removal can match or exceed current best, stop
+        if feat_to_remove is None or best_after < best_score:
             break
 
-    return performance_history, iterations_info
+        # Commit the removal
+        current.remove(feat_to_remove)
+        iteration += 1
+        best_score = best_after
+        records.append({
+            "step": iteration,
+            "accuracy": best_score,
+            "feature_removed": feat_to_remove,
+            "total_features": len(current)
+        })
+
+    return pd.DataFrame.from_records(records)
 
 # ——————————————————————————————
 # Define your feature groups (display, column) pairs
@@ -691,39 +786,50 @@ controls_row_plsda = ui.div(
     ui.input_action_button("deselect_all", "Deselect All"),
     style="display:flex; gap:8px; margin-bottom:12px;"
 )
+# at the top of your UI-building code:
+default_pls_feats = {
+    "Pauling_radius_CN12_A/B",
+    "atomic_weight_weighted_A+B"
+}
+
+
+
 feature_cards = []
 for gid, info in feature_groups_plsda.items():
-    # build the per‐feature checkboxes
-    checks = [
-        ui.input_checkbox(
-            f"feat_{make_safe_id(col)}",
-            disp,
-            value=True,
+    # 1) Build feature‐level checkboxes
+    checks = []
+    for disp, col in info["features"]:
+        checks.append(
+            ui.input_checkbox(
+                f"feat_{make_safe_id(col)}",
+                disp,
+                value=(col in default_pls_feats),  # only your two defaults = True
+            )
         )
-        for disp, col in info["features"]
-    ]
-    # build a header that has both the group‐level checkbox and the bold label
+
+    # 2) Group default = True only if *all* its features are in the defaults set
+    group_default = all(col in default_pls_feats for _, col in info["features"])
+
+    # 3) Header with that computed default
     header = ui.card_header(
         ui.div(
-            # tell the checkbox itself to only be as wide as it needs to be:
             ui.input_checkbox(
                 f"group_{gid}",
-                "",              # no label text here
-                value=True,
-                width="2em"      # make the input only 1em wide
+                "",             # no label text here
+                value=group_default,
+                width="2em"
             ),
-            # the feature‐group name right after it, no margin or padding
             ui.HTML(f"<b style='margin:0; padding:0;'>{info['label']}</b>"),
-            # container flexbox: zero gap so they sit flush
             style="display:flex; align-items:center; gap:0; margin:0; padding:0;"
         ),
         style="font-size:1em;"
     )
+
     feature_cards.append(
         ui.card(
             header,
             *checks,
-            full_screen=False,
+            full_screen=False
         )
     )
 
@@ -843,7 +949,7 @@ app_ui = ui.page_fluid(
                                 ui.column(3, *cards_pca_col3),
                                 ui.column(3, *cards_pca_col4),
                             ), 
-                            width=900
+                            width=875
                         ),
                         ui.div(
                             output_widget("pca_plot"),
@@ -873,7 +979,7 @@ app_ui = ui.page_fluid(
                                 ui.column(3, *cards_cluster_col3),
                                 ui.column(3, *cards_cluster_col4),
                             ),
-                            width=900
+                            width=875
                         ),
                         ui.div(
                             output_widget("clust_plot"),
@@ -901,7 +1007,7 @@ app_ui = ui.page_fluid(
                                 ui.column(3, *cards_pls_col3),
                                 ui.column(3, *cards_pls_col4),
                             ),
-                            width=900
+                            width=875
                         ),
                         ui.div(
                             output_widget("pls_plot"),
@@ -926,67 +1032,80 @@ app_ui = ui.page_fluid(
                                 style="display:flex; justify-content:center;"
                                 )
                             ),
-                            ui.hr(),
+                        ui.hr(),
                         ui.h3("Forward Feature Selection"),
                             ui.input_action_button("run_forward", "Run"),
                             ui.row(
-                                # Left half: perf plot + text stacked
-                                ui.column(
-                                    6,
-                                    ui.div(
-                                        ui.div(output_widget("forward_perf_plot"), style="flex:1;"),
-                                        ui.div(ui.output_text_verbatim("forward_log"),
-                                            style="flex:1; overflow:auto;"),
-                                        style="display:flex; flex-direction:column; height:500px;"
-                                    )
-                                ),
-                                # Right half: scatter + slider stacked to exactly 500px
-                                ui.column(
-                                6,
-                                ui.div(
-                                    # make the whole column a centered column
-                                    ui.div(
-                                    output_widget("forward_scatter_plot"),
-                                    style="flex:1; display:flex; justify-content:center; align-items:center;"
+                                ui.layout_columns(
+                                    ui.card(
+                                        ui.div(
+                                            ui.row(
+                                                ui.column(6,
+                                                    ui.input_text(
+                                                        "init_feat1", 
+                                                        "Feature 1", 
+                                                        placeholder="e.g. atomic_weight_A"
+                                                    )
+                                                ),
+                                                ui.column(6,
+                                                    ui.input_text(
+                                                        "init_feat2", 
+                                                        "Feature 2", 
+                                                        placeholder="e.g. atomic_weight_B"
+                                                    )
+                                                )
+                                            ),
+                                            ui.div(
+                                                output_widget("forward_perf_plot"), 
+                                                style="flex:1;"
+                                            ),
+                                            ui.output_data_frame("forward_log"),
+                                            style="height:800px;"
+                                        )
+                                    ),   
+                                    ui.card(
+                                        ui.div(
+                                            output_widget("forward_scatter_plot"),
+                                            style="flex:1; display:flex; justify-content:center; align-items:center;"
+                                        ),
+                                        ui.div(
+                                            ui.output_ui("forward_slider_ui"),
+                                            style="flex:none; display:flex; justify-content:center; margin-top:8px;"
+                                        ),   
                                     ),
-                                    ui.div(
-                                    ui.output_ui("forward_slider_ui"),
-                                    style="flex:none; display:flex; justify-content:center; margin-top:8px;"
-                                    ),
-                                    style="display:flex; flex-direction:column; align-items:center; height:600px;"
-                                    )
                                 )
                             ),
-                            ui.hr(),
+                        ui.hr(),
                         ui.h3("Backward Feature Selection"),
                             ui.input_action_button("run_backward", "Run"),
                             ui.row(
-                                # Left half: perf plot + text stacked
-                                ui.column(
-                                    6,
-                                    ui.div(
-                                        ui.div(output_widget("backward_perf_plot"), style="flex:1;"),
-                                        ui.div(ui.output_text_verbatim("backward_log"),
-                                            style="flex:1; overflow:auto;"),
+                                ui.layout_columns(
+                                    ui.card(
+                                        ui.div(
+                                            ui.div(
+                                                output_widget("backward_perf_plot"), 
+                                                style="flex:1;"
+                                            ),
+                                            ui.output_data_frame("backward_log"),
+                                            ui.output_text_verbatim("backward_final_feats"),
+                                            style="height:800px;"
+                                        ),
                                         style="display:flex; flex-direction:column; height:500px;"
-                                    )
-                                ),
-                                # Right half: scatter + slider stacked to exactly 500px
-                                ui.column(
-                                6,
-                                ui.div(
-                                    ui.div(
-                                    output_widget("backward_scatter_plot"),
-                                    style="display:flex; justify-content:center; margin-top:12px;"),
-                                    ui.div(
-                                    ui.output_ui("backward_slider_ui"),
-                                    style="flex:none; display:flex; justify-content:center; margin-top:8px;"
                                     ),
-                                    style="display:flex; flex-direction:column; align-items:center; height:600px;"
-                                        )
+                                    ui.card(
+                                        ui.div(
+                                            output_widget("backward_scatter_plot"),
+                                            style="display:flex; justify-content:center; margin-top:12px;"
+                                        ),
+                                        ui.div(
+                                            ui.output_ui("backward_slider_ui"),
+                                            style="flex:none; display:flex; justify-content:center; margin-top:8px;"
+                                        ),
+                                        style="display:flex; flex-direction:column; align-items:center; height:600px;"
                                     )
-                                ),
-                )
+                                )
+                            ),
+                    )
             )
         )
     )
@@ -997,6 +1116,10 @@ app_ui = ui.page_fluid(
 # ——————————————
 def server(input, output, session):
     
+    prev_group_states = {
+      gid: all(col in default_pls_feats for _, col in info["features"])
+      for gid, info in feature_groups_plsda.items()
+    }
     # ——————————————
 
     # PCA calculation
@@ -1232,7 +1355,8 @@ def server(input, output, session):
 
         links = []
         for _, row in struct_df.iterrows():
-            a, b = split_formula(row["Formula"])
+            formula = row["Formula"]
+            a, b = split_formula(formula)
             try:
                 x0, y0 = dfp.loc[dfp.Symbol==a, ["PC1","PC2"]].iloc[0]
                 x1, y1 = dfp.loc[dfp.Symbol==b, ["PC1","PC2"]].iloc[0]
@@ -1243,7 +1367,8 @@ def server(input, output, session):
                 "y": [y0, y1],
                 "mid_x": (x0 + x1) / 2,
                 "mid_y": (y0 + y1) / 2,
-                "struct": row["Structure type"]
+                "struct": row["Structure type"],
+                "formula": formula
             })
 
         return {
@@ -1296,7 +1421,9 @@ def server(input, output, session):
                 marker=dict(color=col, size=10),
                 name=struct,
                 legendgroup=struct,
-                showlegend=show_leg
+                showlegend=show_leg,
+                hovertext=[link["formula"]],
+                hovertemplate="%{hovertext}"
             ))
             seen.add(struct)
             fig.update_traces(marker=dict(opacity=0.6))
@@ -1312,8 +1439,9 @@ def server(input, output, session):
             yanchor="bottom",
             y=1.02,
             xanchor="center",
-            x=0.5
-            )
+            x=0.5,
+            ),
+            width=800, height=830
         )
         return fig
     @render.data_frame
@@ -1341,15 +1469,19 @@ def server(input, output, session):
         for gid in feature_groups_plsda:
             ui.update_checkbox(f"group_{gid}", value=False, session=session)
 
-    # When a group toggles, toggle its features
     for gid, info in feature_groups_plsda.items():
         @reactive.Effect
         @reactive.event(getattr(input, f"group_{gid}"))
         def _grp_toggle(gid=gid, info=info):
-            state = getattr(input, f"group_{gid}")()
-            for _, col in info["features"]:
-                fid = make_safe_id(col)
-                ui.update_checkbox(f"feat_{fid}", value=state, session=session)
+            new_state = getattr(input, f"group_{gid}")()
+            old_state = prev_group_states[gid]
+            # only run if it really changed
+            if new_state != old_state:
+                prev_group_states[gid] = new_state
+                # propagate to all children
+                for _, col in info["features"]:
+                    fid = make_safe_id(col)
+                    ui.update_checkbox(f"feat_{fid}", value=new_state, session=session)
 
     # Core PLS-DA reactive calculation
     @reactive.Calc
@@ -1364,6 +1496,8 @@ def server(input, output, session):
         if not valid:
             return None
 
+        if len(valid) < 2:
+            return None
         # 2) Prepare X, y
         X = df[valid].values
         y = df[label_col].values
@@ -1467,7 +1601,9 @@ def server(input, output, session):
             fig.update_layout(
                 title="PLS-DA Projection (No features selected)",
                 template="ggplot2",
-                autosize=False
+                autosize=False,
+                width=800,
+                height=830
             )
             return fig
 
@@ -1511,9 +1647,7 @@ def server(input, output, session):
             legend_title_side="top center"
         )
 
-        # THIS is the key: lock the y-axis to the x-axis at 1:1
         fig.update_yaxes(scaleanchor="x", scaleratio=1)
-        # (optional) if you want to explicitly constrain x to data domain:
         fig.update_xaxes(constrain="domain")
         return fig
 
@@ -1565,7 +1699,7 @@ def server(input, output, session):
             fig.update_layout(
                 title="Click “Run” to calculate best number of Components.",
                 template="ggplot2",
-                width=800, height=300
+                height=300
             )
             return fig
 
@@ -1581,23 +1715,39 @@ def server(input, output, session):
             xaxis_title="Components",
             yaxis_title="Accuracy",
             template="ggplot2",
-            width=1200, height=300
+            height=300
         )
         return fig
 
     # ——————————————————————————————————————
     # 2) Forward Feature Selection
     # ——————————————————————————————————————
+
     @reactive.Calc
     @reactive.event(input.run_forward)
     def forward_res():
         numeric = df.drop(columns=[label_col])
         target  = df[label_col]
+
+        # grab seed inputs
+        f1 = input.init_feat1().strip()
+        f2 = input.init_feat2().strip()
+
+        # if both are non-empty, use them; otherwise let the function pick randomly
+        init = [f1, f2] if (f1 and f2) else None
+
         return forward_selection_plsda_df(
-            numeric, target,
-            max_features=40, n_components=2, scoring='accuracy'
+            numeric,
+            target,
+            n_components=2,
+            plateau_steps=10,
+            init_features=init,
+            scoring='accuracy'
         )
 
+    # ─────────────────────────────────────────────────────────────────────────────
+    # 2) Plot performance: accuracy vs. total_features
+    # ─────────────────────────────────────────────────────────────────────────────
     @render_plotly
     def forward_perf_plot():
         if input.run_forward() < 1:
@@ -1608,71 +1758,111 @@ def server(input, output, session):
             )
             return fig
 
-        hist, _ = forward_res()
-        # x from 1 to len(hist)
+        df_steps = forward_res()
         fig = go.Figure(go.Scatter(
-            x=list(range(2, len(hist) + 1)),
-            y=hist,
+            x=df_steps['total_features'],
+            y=df_steps['accuracy'],
             mode="lines+markers"
         ))
         fig.update_layout(
             title="Forward Selection Accuracy",
             xaxis_title="Number of Features",
             yaxis_title="Accuracy",
-            xaxis=dict(tickmode="linear", tick0=2, dtick=1),
+            xaxis=dict(tickmode="linear"),
             template="ggplot2",
-            xaxis_range=[1, len(hist)+1] 
+            xaxis_range=[
+                df_steps['total_features'].min() - 1,
+                df_steps['total_features'].max() + 1
+            ],
+            height=300,
         )
         return fig
 
-    @render.text
+    # ─────────────────────────────────────────────────────────────────────────────
+    # 3) Show the full forward‐selection log as a table
+    # ─────────────────────────────────────────────────────────────────────────────
+    @render.data_frame
     def forward_log():
         if input.run_forward() < 1:
-            return "Forward selection not run yet."
-        _, iters = forward_res()
-        return "\n".join(
-            f"Step {it} | Features: {it+1} | sel={sel}, score={sc:.4f}"
-            for it, sel, sc in iters
-        )
+            # empty skeleton until run
+            return pd.DataFrame(columns=[
+                'step', 'total_features', 'feature_added', 'accuracy'
+            ])
+        return forward_res()
 
+    # ─────────────────────────────────────────────────────────────────────────────
+    # 4) Slider to pick which step to inspect
+    # ─────────────────────────────────────────────────────────────────────────────
+    # 4) Slider to pick which feature‐count to inspect
     @render.ui
     def forward_slider_ui():
-        # before we run, show a harmless 1–1 slider
+        # before any run, force the slider to hit "2 features"
         if input.run_forward() < 1:
             return ui.input_slider(
-                "forward_step", "Step",
-                min=1, max=1, value=1, step=1
+                "forward_step", 
+                "Features",
+                min=2, max=2, value=2, step=1
             )
-        hist, _ = forward_res()
-        n = len(hist)
+
+        df_steps = forward_res()
+        # grab the actual min/max of your feature counts
+        counts = df_steps["total_features"].astype(int)
+        low, high = counts.min(), counts.max()
+
         return ui.input_slider(
-            "forward_step", "Step",
-            min=1, max=n, value=1, step=1
+            "forward_step",
+            "Features",
+            min=low,
+            max=high,
+            value=low,
+            step=1,
         )
 
+
+    # 5) Scatter PLS‐DA projection at the chosen feature‐count
     @render_plotly
     def forward_scatter_plot():
         if input.run_forward() < 1:
             fig = go.Figure()
             fig.update_layout(
                 title="…waiting for forward selection…",
+                width=600, 
+                height=550
             )
             return fig
 
-        _, iters = forward_res()
-        # convert 1‐based slider back to 0‐based index
-        idx = input.forward_step() - 1
-        it, sel_feats, sc = iters[idx]
+        df_steps = forward_res()
+        selected_n = input.forward_step()  # now the feature‐count, not the step
 
-        X = StandardScaler().fit_transform(df[sel_feats])
-        Y = pd.get_dummies(df[label_col])
-        pls = PLSRegression(n_components=2, scale=False).fit(X, Y)
+        # guard against “no matching row”
+        mask = df_steps["total_features"] == selected_n
+        if not mask.any():
+            fig = go.Figure()
+            fig.update_layout(
+                title=f"No forward‐selection record for {selected_n} features.",
+                width=600,
+                height=550,
+            )
+            return fig
+
+        # get the index of that row
+        idx = df_steps.index[mask][0]
+
+        # reconstruct the features added up to that point
+        added_lists = df_steps.loc[:idx, "feature_added"].str.split(",")
+        sel_feats = [feat for sub in added_lists for feat in sub]
+
+        # now rebuild your PLS‐DA scatter exactly as before
+        X_scaled = StandardScaler().fit_transform(df[sel_feats])
+        Y_dummy  = pd.get_dummies(df[label_col])
+        pls = PLSRegression(n_components=2, scale=False).fit(X_scaled, Y_dummy)
         scores = pls.x_scores_
+
         df_sc = pd.DataFrame(scores, columns=["Component1", "Component2"])
         df_sc["Class"] = df[label_col].values
 
         cmap = {
-            cl: c for cl,c in zip(
+            cl: c for cl, c in zip(
                 sorted(df_sc["Class"].unique()),
                 ["#c3121e","#0348a1","#ffb01c","#027608",
                  "#1dace6","#9c5300","#9966cc","#ff4500"]
@@ -1680,12 +1870,19 @@ def server(input, output, session):
         }
 
         fig = px.scatter(
-            df_sc, x="Component1", y="Component2", color="Class",
-            template="ggplot2", title=f"{it+1} Features", color_discrete_map=cmap
+            df_sc,
+            x="Component1", y="Component2",
+            color="Class",
+            template="ggplot2",
+            title=f"{selected_n} Features",
+            color_discrete_map=cmap
         )
         fig.update_traces(marker=dict(size=26, opacity=0.6))
+        fig.update_layout(
+            width=500,
+            height=400,
+        )
         return fig
-
     # ——————————————————————————————————————
     # 3) Backward Elimination
     # ——————————————————————————————————————
@@ -1695,9 +1892,10 @@ def server(input, output, session):
         numeric = df.drop(columns=[label_col])
         target  = df[label_col]
         return backward_elimination_plsda_df(
-            numeric, target,
-            min_features=120, 
-            n_components=2, 
+            numeric,
+            target,
+            min_features=2,
+            n_components=2,
             scoring='accuracy'
         )
 
@@ -1711,86 +1909,123 @@ def server(input, output, session):
             )
             return fig
 
-        hist, iters = backward_res()
-        counts = [n for n,_,_ in iters]
-
+        df_steps = backward_res()
         fig = go.Figure(go.Scatter(
-            x=counts,
-            y=hist,
+            x=df_steps['total_features'],
+            y=df_steps['accuracy'],
             mode="lines+markers"
         ))
+        # basic layout
         fig.update_layout(
             title="Backward Elimination Accuracy",
             xaxis_title="Number of Features",
             yaxis_title="Accuracy",
             template="ggplot2",
-            # ← replace your old xaxis=… here with:
-            xaxis=dict(
-                autorange='reversed',      # ← flip the direction
-                tickmode='linear',
-                tick0=min(counts),
-                dtick=1
-            )
+            height=300,
+        )
+        # now lock in a descending domain
+        low  = df_steps['total_features'].min() - 1
+        high = df_steps['total_features'].max() + 1 
+        fig.update_xaxes(
+            autorange=False,              # turn autorange off
+            range=[high, low],            # descending → reversed
+            tickmode='linear'
         )
         return fig
 
-    @render.text
+    @render.data_frame
     def backward_log():
+        # show the full elimination log as a table
         if input.run_backward() < 1:
-            return "Backward selection not run yet."
-        _, iters = backward_res()
-
-        return "\n".join(
-            f"Step {i+1} | Features : {nfeat} | sel={feats}, score={sc:.4f}"
-            for i, (nfeat, feats, sc) in enumerate(iters)
-        )
-
+            return pd.DataFrame(columns=[
+                'step','accuracy','feature_removed','total_features'
+            ])
+        return backward_res()
+    
+    @render.text
+    def backward_final_feats():
+        # don’t show anything until they’ve clicked “Run”
+        if input.run_backward() < 1:
+            return ""
+        # get the elimination log
+        df_steps = backward_res()
+        # start with all features
+        current_feats = list(df.drop(columns=[label_col]).columns)
+        # remove in order of the recorded removals
+        for _, row in df_steps.sort_values("step").iterrows():
+            feat = row["feature_removed"]
+            if feat:
+                current_feats.remove(feat)
+        # format as a nice comma-list
+        return f"Final {len(current_feats)} features: " + ", ".join(current_feats)
+    
     @render.ui
     def backward_slider_ui():
-        _, iters = backward_res()
-        counts   = [n for n, _, _ in iters]
-        high, low = max(counts), min(counts)
-
+        df_steps = backward_res()
+        counts = df_steps['total_features'].tolist()
+        low, high = min(counts), max(counts)
         return ui.input_slider(
             "backward_step", "Features",
-            # left edge = high count, right = low count
             min=low,
             max=high,
             value=high,
             step=-1
         )
 
-    @render_widget
+    @render_plotly
     def backward_scatter_plot():
         if input.run_backward() < 1:
             fig = go.Figure()
-            fig.update_layout(title="…waiting for backward selection…")
+            fig.update_layout(
+                title="…waiting for backward selection…",
+                width=600, 
+                height=550, 
+            )
             return fig
 
-        _, iters = backward_res()
-        counts = [n for n,_,_ in iters]
-        sel = input.backward_step()
-        idx = counts.index(sel)
+        df_steps = backward_res()
+        target_n = input.backward_step()
 
-        nfeat, feats, sc = iters[idx]
+        # start with the full feature list (all numeric cols)
+        current_feats = list(df.drop(columns=[label_col]).columns)
 
-        X = StandardScaler().fit_transform(df[feats])
+        # walk through removal records in step order
+        # stop as soon as we reach the desired count
+        for _, row in df_steps.sort_values('step').iterrows():
+            # skip the initial row (step=0) which has no removal
+            if row['feature_removed'] and len(current_feats) > target_n:
+                current_feats.remove(row['feature_removed'])
+            if len(current_feats) == target_n:
+                break
+
+        # now plot PLS‐DA on current_feats
+        X = StandardScaler().fit_transform(df[current_feats])
         Y = pd.get_dummies(df[label_col])
         pls = PLSRegression(n_components=2, scale=False).fit(X, Y)
         scores = pls.x_scores_
-        df_sc = pd.DataFrame(scores, columns=["Component1", "Component2"])
+        df_sc = pd.DataFrame(scores, columns=["Component1","Component2"])
         df_sc["Class"] = df[label_col].values
 
-        cmap = {cl: c for cl, c in zip(sorted(df_sc["Class"].unique()), [
-            "#c3121e","#0348a1","#ffb01c","#027608",
-            "#1dace6","#9c5300","#9966cc","#ff4500"
-        ])}
+        cmap = {
+            cl: c for cl,c in zip(
+                sorted(df_sc["Class"].unique()),
+                ["#c3121e","#0348a1","#ffb01c","#027608",
+                "#1dace6","#9c5300","#9966cc","#ff4500"]
+            )
+        }
 
         fig = px.scatter(
-            df_sc, x="Component1", y="Component2", color="Class",
-            template="ggplot2", title=f"{nfeat} Features", color_discrete_map=cmap
+            df_sc, x="Component1", y="Component2",
+            color="Class",
+            template="ggplot2",
+            title=f"{len(current_feats)} Features",
+            color_discrete_map=cmap
         )
         fig.update_traces(marker=dict(size=26, opacity=0.6))
+        fig.update_layout(
+            width=500, 
+            height=400, 
+        )
         return fig
 # ——————————————
 # Run the app
