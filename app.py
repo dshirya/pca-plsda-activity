@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 from shiny import App, ui, reactive, render
-from shinywidgets import output_widget, render_widget
+from shinywidgets import output_widget, render_widget, render_plotly
 
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.metrics import accuracy_score, f1_score, silhouette_score
@@ -27,8 +27,12 @@ pca_data = "data/elemental-property-list.xlsx"
 cluster_data = "data/pauling-data.xlsx"
 
 elements_by_group = {
-        "alkali_metals": ["Li", "Na", "K", "Rb", "Cs", "Fr"],
-        "alkaline_earth_metals": ["Be", "Mg", "Ca", "Sr", "Ba", "Ra"],
+        "alkali_metals": [
+            "Li", "Na", "K", "Rb", "Cs", "Fr"
+        ],
+        "alkaline_earth_metals": [
+            "Be", "Mg", "Ca", "Sr", "Ba", "Ra"
+        ],
         "transition_metals": [
             "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn",
             "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd",
@@ -43,13 +47,22 @@ elements_by_group = {
             "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", 
             "Es", "Fm", "Md", "No", "Lr"
         ],
-        "metalloids": ["B", "Si", "Ge", "As", "Sb", "Te", "Po"],
-        "non_metals": ["H", "C", "N", "O", "P", "S", "Se"],
-        "halogens": ["F", "Cl", "Br", "I", "At", "Ts"],
-        "noble_gases": ["He", "Ne", "Ar", "Kr", "Xe", "Rn", "Og"],
-        "post_transition_metals": ["Al", "Ga", "In", "Sn", "Tl", "Pb", "Bi", "Nh", "Fl", "Mc", "Lv"]
+        "metalloids": [
+            "B", "Si", "Ge", "As", "Sb", "Te", "Po"
+        ],
+        "non_metals": [
+            "H", "C", "N", "O", "P", "S", "Se"
+        ],
+        "halogens": [
+            "F", "Cl", "Br", "I", "At", "Ts"
+        ],
+        "noble_gases": [
+            "He", "Ne", "Ar", "Kr", "Xe", "Rn", "Og"
+        ],
+        "post_transition_metals": [
+            "Al", "Ga", "In", "Sn", "Tl", "Pb", "Bi", "Nh", "Fl", "Mc", "Lv"
+        ]
     }
-
 
 symbol_to_group = {
     el: grp
@@ -57,9 +70,12 @@ symbol_to_group = {
     for el in lst
 }
 
+
 # ————————————————————————
+# Helper functions
+# ————————————————————————
+
 # Helper to turn any string into a valid Shiny ID
-# ————————————————————————
 def make_safe_id(name: str) -> str:
     # first give / and + unique replacements
     s = name.replace("/", "_slash_").replace("+", "_plus_")
@@ -70,9 +86,7 @@ def make_safe_id(name: str) -> str:
         safe = 'f_' + safe
     return safe
 
-# -------------------------------
 # Helper: Evaluate a Feature Subset via 5-fold CV
-# -------------------------------
 def evaluate_subset(X: pd.DataFrame,
                     y: pd.Series,
                     selected_features: list[str],
@@ -110,9 +124,8 @@ def evaluate_subset(X: pd.DataFrame,
     else:
         return f1_score(y, preds, average="macro")
 
-# -------------------------------
+
 # Forward Selection on a DataFrame
-# -------------------------------
 def forward_selection_plsda_df(numeric_data, target_data,
                               max_features=40, n_components=2, scoring='accuracy'):
     features = list(numeric_data.columns)
@@ -161,9 +174,8 @@ def forward_selection_plsda_df(numeric_data, target_data,
 
     return performance_history, iterations_info
 
-# -------------------------------
+
 # Backward Elimination on a DataFrame
-# -------------------------------
 def backward_elimination_plsda_df(numeric_data, target_data,
                                  min_features=1, n_components=2, scoring='accuracy'):
     current = list(numeric_data.columns)
@@ -449,7 +461,6 @@ feature_groups_plsda = {
         ],
     },
 }
-
 
 feature_groups_pca = {
     "basic_atomic_properties": {
@@ -816,65 +827,61 @@ app_ui = ui.page_fluid(
             ui.page_navbar(
                 ui.nav_panel(
                 "Element Mapping",
-                ui.row(
-                    # LEFT half: file upload + select/deselect + feature-cards
-                    ui.column(
-                    6,
-                    # select/deselect buttons
-                    ui.div(
-                        ui.input_action_button("pca_select_all",   "Select All"),
-                        ui.input_action_button("pca_deselect_all", "Deselect All"),
-                        style="display:flex; gap:8px; margin:12px 0;"
-                    ),
-                    # now the cards, 4 columns
-                    ui.row(
-                        ui.column(3, *cards_pca_col1),
-                        ui.column(3, *cards_pca_col2),
-                        ui.column(3, *cards_pca_col3),
-                        ui.column(3, *cards_pca_col4),
-                    )
-                    ),
-                    # RIGHT half: run button + scatter + contributions table
-                    ui.column(
-                    6,
-                    ui.div(
-                        output_widget("pca_plot"),
-                        style="display:flex; justify-content:center; margin-top:12px;"
-                    ),
-                    ui.div(
-                        ui.output_data_frame("pca_contrib_table"),
-                        style="display:flex; justify-content:center; margin-top:12px;"
+                    ui.layout_sidebar(
+                        ui.sidebar(
+                            ui.div(
+                                ui.input_action_button(
+                                    "pca_select_all",   
+                                    "Select All"),
+                                ui.input_action_button(
+                                    "pca_deselect_all", 
+                                    "Deselect All"),
+                            ),
+                            ui.row(
+                                ui.column(3, *cards_pca_col1),
+                                ui.column(3, *cards_pca_col2),
+                                ui.column(3, *cards_pca_col3),
+                                ui.column(3, *cards_pca_col4),
+                            ), 
+                            width=900
+                        ),
+                        ui.div(
+                            output_widget("pca_plot"),
+                            style="display:flex; justify-content:center; margin-top:12px;"
+                        ),
+                        ui.row(
+                            ui.output_data_frame("pca_contrib_table"),
+                            style="display:flex; justify-content:center; margin-top:12px;"
                         ),
                     )
-                )
-            ),
+                ),
                 ui.nav_panel(
                 "Clustering",
-                ui.row(
-                    # LEFT: file upload + select/deselect + same feature cards
-                    ui.column(
-                    6,
-                    # buttons to select/deselect the same PCA‐features
-                    ui.div(
-                        ui.input_action_button("clust_select_all",   "Select All"),
-                        ui.input_action_button("clust_deselect_all", "Deselect All"),
-                        style="display:flex; gap:8px; margin:12px 0;"
-                    ),
-                    # your PCA‐feature cards (reuse cards_pca_col1…4)
-                    ui.row(
-                        ui.column(3, *cards_cluster_col1),
-                        ui.column(3, *cards_cluster_col2),
-                        ui.column(3, *cards_cluster_col3),
-                        ui.column(3, *cards_cluster_col4),
-                    )
-                    ),
-                    # RIGHT: the PCA scatter + contributions
-                    ui.column(
-                    6,
-                    ui.div(output_widget("clust_plot"),
-                            style="display:flex; justify-content:center; margin-top:12px;"),
-                    ui.div(ui.output_data_frame("clust_contrib_table"),
-                            style="display:flex; justify-content:center; margin-top:12px;")
+                    ui.layout_sidebar(
+                        ui.sidebar(
+                            ui.div(
+                                ui.input_action_button(
+                                    "clust_select_all",   
+                                    "Select All"),
+                                ui.input_action_button(
+                                    "clust_deselect_all", 
+                                    "Deselect All"),
+                            ),
+                            ui.row(
+                                ui.column(3, *cards_cluster_col1),
+                                ui.column(3, *cards_cluster_col2),
+                                ui.column(3, *cards_cluster_col3),
+                                ui.column(3, *cards_cluster_col4),
+                            ),
+                            width=900
+                        ),
+                        ui.div(
+                            output_widget("clust_plot"),
+                            style="display:flex; justify-content:center; margin-top:12px;"
+                        ),
+                        ui.row(
+                            ui.output_data_frame("clust_contrib_table"),
+                            style="display:flex; justify-content:center; margin-top:12px;"
                         )
                     )
                 )
@@ -885,109 +892,100 @@ app_ui = ui.page_fluid(
             ui.page_navbar(
                 ui.nav_panel(
                 "Visualization",
-                ui.row(
-                    # LEFT HALF: each card in its own bordered box
-                        ui.column(
-                        6,
-                        controls_row_plsda,
-                        ui.row(
-                            ui.column(3, *cards_pls_col1),
-                            ui.column(3, *cards_pls_col2),
-                            ui.column(3, *cards_pls_col3),
-                            ui.column(3, *cards_pls_col4),
-                        )
+                    ui.layout_sidebar(
+                        ui.sidebar(
+                            controls_row_plsda,
+                            ui.row(
+                                ui.column(3, *cards_pls_col1),
+                                ui.column(3, *cards_pls_col2),
+                                ui.column(3, *cards_pls_col3),
+                                ui.column(3, *cards_pls_col4),
+                            ),
+                            width=900
                         ),
-                    # RIGHT HALF: unchanged
-                        ui.column(
-                        6,
-                        ui.div(output_widget("pls_plot"), style="display:flex; justify-content:center;"),
-                        ui.row(
-                            ui.column(4, ui.output_data_frame("metrics_table")),
-                            ui.column(7, ui.output_data_frame("contrib_table")),
-                            style="margin-top: 5px;"
-                            )
-                        )
+                        ui.div(
+                            output_widget("pls_plot"),
+                            style="display:flex; justify-content:center; margin-top:12px;"
+                        ),
+                        ui.output_data_frame("contrib_table"),
+                        ui.output_data_frame("metrics_table")
                     )
                 ),
                 ui.nav_panel(
                     "Evaluation",
-
-                    # 1) CV vs # Components, centered
-                    ui.h3("Number of Components"),
-                    ui.input_action_button("run_eval_n", "Run"),
-                    ui.row(
-                        ui.column(
-                        8,
-                        output_widget("eval_n_plot"),
-                        offset=2,
-                        style="display:flex; justify-content:center;"
-                        )
-                    ),
-                    ui.hr(),
-
-                   # 2) Forward Feature Selection
-                    ui.h3("Forward Feature Selection"),
-                    ui.input_action_button("run_forward", "Run"),
-                    ui.row(
-                        # Left half: perf plot + text stacked
-                        ui.column(
-                            6,
-                            ui.div(
-                                ui.div(output_widget("forward_perf_plot"), style="flex:1;"),
-                                ui.div(ui.output_text_verbatim("forward_log"),
-                                    style="flex:1; overflow:auto;"),
-                                style="display:flex; flex-direction:column; height:500px;"
-                            )
-                        ),
-                        # Right half: scatter + slider stacked to exactly 500px
-                        ui.column(
-                        6,
-                        ui.div(
-                            # make the whole column a centered column
-                            ui.div(
-                            output_widget("forward_scatter_plot"),
-                            style="flex:1; display:flex; justify-content:center; align-items:center;"
+                        ui.h3("Number of Components"),
+                            ui.input_action_button(
+                                "run_eval_n", 
+                                "Run"
                             ),
-                            ui.div(
-                            ui.output_ui("forward_slider_ui"),
-                            style="flex:none; display:flex; justify-content:center; margin-top:8px;"
+                            ui.row(
+                                ui.column(
+                                8,
+                                output_widget("eval_n_plot"),
+                                offset=2,
+                                style="display:flex; justify-content:center;"
+                                )
                             ),
-                            style="display:flex; flex-direction:column; align-items:center; height:600px;"
-                        )
-                        )
-                    ),
-                    ui.hr(),
-
-                    # 3) Backward Feature Selection
-                    ui.h3("Backward Feature Selection"),
-                    ui.input_action_button("run_backward", "Run"),
-                    ui.row(
-                        # Left half: perf plot + text stacked
-                        ui.column(
-                            6,
-                            ui.div(
-                                ui.div(output_widget("backward_perf_plot"), style="flex:1;"),
-                                ui.div(ui.output_text_verbatim("backward_log"),
-                                    style="flex:1; overflow:auto;"),
-                                style="display:flex; flex-direction:column; height:500px;"
-                            )
-                        ),
-                        # Right half: scatter + slider stacked to exactly 500px
-                        ui.column(
-                        6,
-                        ui.div(
-                            ui.div(
-                            output_widget("backward_scatter_plot"),
-                            style="flex:1; display:flex; justify-content:center; align-items:center;"
+                            ui.hr(),
+                        ui.h3("Forward Feature Selection"),
+                            ui.input_action_button("run_forward", "Run"),
+                            ui.row(
+                                # Left half: perf plot + text stacked
+                                ui.column(
+                                    6,
+                                    ui.div(
+                                        ui.div(output_widget("forward_perf_plot"), style="flex:1;"),
+                                        ui.div(ui.output_text_verbatim("forward_log"),
+                                            style="flex:1; overflow:auto;"),
+                                        style="display:flex; flex-direction:column; height:500px;"
+                                    )
+                                ),
+                                # Right half: scatter + slider stacked to exactly 500px
+                                ui.column(
+                                6,
+                                ui.div(
+                                    # make the whole column a centered column
+                                    ui.div(
+                                    output_widget("forward_scatter_plot"),
+                                    style="flex:1; display:flex; justify-content:center; align-items:center;"
+                                    ),
+                                    ui.div(
+                                    ui.output_ui("forward_slider_ui"),
+                                    style="flex:none; display:flex; justify-content:center; margin-top:8px;"
+                                    ),
+                                    style="display:flex; flex-direction:column; align-items:center; height:600px;"
+                                    )
+                                )
                             ),
-                            ui.div(
-                            ui.output_ui("backward_slider_ui"),
-                            style="flex:none; display:flex; justify-content:center; margin-top:8px;"
-                            ),
-                            style="display:flex; flex-direction:column; align-items:center; height:600px;"
-                        )
-                        )
-                    ),
+                            ui.hr(),
+                        ui.h3("Backward Feature Selection"),
+                            ui.input_action_button("run_backward", "Run"),
+                            ui.row(
+                                # Left half: perf plot + text stacked
+                                ui.column(
+                                    6,
+                                    ui.div(
+                                        ui.div(output_widget("backward_perf_plot"), style="flex:1;"),
+                                        ui.div(ui.output_text_verbatim("backward_log"),
+                                            style="flex:1; overflow:auto;"),
+                                        style="display:flex; flex-direction:column; height:500px;"
+                                    )
+                                ),
+                                # Right half: scatter + slider stacked to exactly 500px
+                                ui.column(
+                                6,
+                                ui.div(
+                                    ui.div(
+                                    output_widget("backward_scatter_plot"),
+                                    style="display:flex; justify-content:center; margin-top:12px;"),
+                                    ui.div(
+                                    ui.output_ui("backward_slider_ui"),
+                                    style="flex:none; display:flex; justify-content:center; margin-top:8px;"
+                                    ),
+                                    style="display:flex; flex-direction:column; align-items:center; height:600px;"
+                                        )
+                                    )
+                                ),
                 )
             )
         )
@@ -1089,14 +1087,16 @@ def server(input, output, session):
             "contrib": contrib_df
         }
 
-    @render_widget
+    @render_plotly
     def pca_plot():
         res = pca_res()
         if res is None:
             fig = go.Figure()
             fig.update_layout(
                 title="No features selected or no data.",
-                template="ggplot2", width=800, height=800
+                template="ggplot2",
+                width=800,
+                height=800,
             )
             return fig
 
@@ -1130,11 +1130,13 @@ def server(input, output, session):
         )
         fig.update_traces(marker=dict(size=26, opacity=0.6))
         fig.update_layout(
-            width=800, height=800,
             xaxis=dict(scaleanchor="y", scaleratio=1),
             yaxis=dict(scaleanchor="x", scaleratio=1),
             showlegend=False,
-            font=dict(size=16)
+            font=dict(size=16),
+            autosize=True,
+            width=800,
+            height=800,
         )
         return fig
     @render.data_frame
@@ -1252,23 +1254,23 @@ def server(input, output, session):
             "links": links
         }
     # 4) render the clustering plot
-    @render_widget
+    @render_plotly
     def clust_plot():
         res = clust_res()
         if not res:
             fig = go.Figure()
-            fig.update_layout(title="No data", width=800, height=800)
+            fig.update_layout(title="No data")
             return fig
 
         dfp = res["dfp"]
-        fig = px.scatter(dfp, x="PC1", y="PC2", text="Symbol", template="ggplot2")
+        fig = px.scatter(dfp, x="PC1", y="PC2", text="Symbol", template="ggplot2", width=800, height=830)
         fig.update_traces(marker=dict(color="green", size=12, opacity=0.6))
 
         # colour map for your three structure types
         cmap = {
             "CsCl": "#c3121e",
             "NaCl": "#0348a1",
-            "ZnS":  "#ffb01c",
+            "ZnS":  "#ffb01c",  
         }
         fig.update_traces(marker=dict(size=26, opacity=0.6))
         seen = set()
@@ -1301,11 +1303,17 @@ def server(input, output, session):
 
         
         fig.update_layout(
-            width=800, height=700,
             xaxis=dict(scaleanchor="y", scaleratio=1),
             yaxis=dict(scaleanchor="x", scaleratio=1),
             font=dict(size=16),
-            showlegend=True
+            showlegend=True,
+            legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="center",
+            x=0.5
+            )
         )
         return fig
     @render.data_frame
@@ -1459,7 +1467,7 @@ def server(input, output, session):
             fig.update_layout(
                 title="PLS-DA Projection (No features selected)",
                 template="ggplot2",
-                width=800, height=700, autosize=False
+                autosize=False
             )
             return fig
 
@@ -1488,9 +1496,25 @@ def server(input, output, session):
         )
         fig.update_traces(marker=dict(size=26, opacity=0.8))
         fig.update_layout(
-            width=800, height=700, autosize=False,
-            font=dict(size=18), showlegend=True
+            margin=dict(l=20, r=20, t=30, b=20),
+            font=dict(size=18),
+            width=800,
+            height=830,
+            showlegend=True,
+
+            # 1) position the whole legend box
+            legend_orientation="h",
+            legend_x=0.5,         # center horizontally
+            legend_xanchor="center",
+            legend_y=1.02,         # push above the plotting area
+            legend_yanchor="bottom",
+            legend_title_side="top center"
         )
+
+        # THIS is the key: lock the y-axis to the x-axis at 1:1
+        fig.update_yaxes(scaleanchor="x", scaleratio=1)
+        # (optional) if you want to explicitly constrain x to data domain:
+        fig.update_xaxes(constrain="domain")
         return fig
 
     # ——————————————
@@ -1514,18 +1538,11 @@ def server(input, output, session):
         return res["contrib"]
     
 
-
-
-
-
     # ————————————————————————
 
     # Evaluation section
 
     # ————————————————————————
-
-
-
 
     
     # ——————————————————————————————————————
@@ -1568,7 +1585,6 @@ def server(input, output, session):
         )
         return fig
 
-
     # ——————————————————————————————————————
     # 2) Forward Feature Selection
     # ——————————————————————————————————————
@@ -1582,14 +1598,13 @@ def server(input, output, session):
             max_features=40, n_components=2, scoring='accuracy'
         )
 
-
-    @render_widget
+    @render_plotly
     def forward_perf_plot():
         if input.run_forward() < 1:
             fig = go.Figure()
             fig.update_layout(
                 title="Waiting to run forward selection…",
-                template="ggplot2", width=800, height=300
+                template="ggplot2"
             )
             return fig
 
@@ -1605,11 +1620,10 @@ def server(input, output, session):
             xaxis_title="Number of Features",
             yaxis_title="Accuracy",
             xaxis=dict(tickmode="linear", tick0=2, dtick=1),
-            template="ggplot2", width=800, height=300,
+            template="ggplot2",
             xaxis_range=[1, len(hist)+1] 
         )
         return fig
-
 
     @render.text
     def forward_log():
@@ -1617,10 +1631,9 @@ def server(input, output, session):
             return "Forward selection not run yet."
         _, iters = forward_res()
         return "\n".join(
-            f"Step {it} | Features : {it+1} | sel={sel}, score={sc:.4f}"
+            f"Step {it} | Features: {it+1} | sel={sel}, score={sc:.4f}"
             for it, sel, sc in iters
         )
-
 
     @render.ui
     def forward_slider_ui():
@@ -1637,14 +1650,12 @@ def server(input, output, session):
             min=1, max=n, value=1, step=1
         )
 
-
-    @render_widget
+    @render_plotly
     def forward_scatter_plot():
         if input.run_forward() < 1:
             fig = go.Figure()
             fig.update_layout(
                 title="…waiting for forward selection…",
-                width=600, height=500
             )
             return fig
 
@@ -1673,9 +1684,7 @@ def server(input, output, session):
             template="ggplot2", title=f"{it+1} Features", color_discrete_map=cmap
         )
         fig.update_traces(marker=dict(size=26, opacity=0.6))
-        fig.update_layout(width=600, height=500)
         return fig
-
 
     # ——————————————————————————————————————
     # 3) Backward Elimination
@@ -1692,14 +1701,13 @@ def server(input, output, session):
             scoring='accuracy'
         )
 
-
-    @render_widget
+    @render_plotly
     def backward_perf_plot():
         if input.run_backward() < 1:
             fig = go.Figure()
             fig.update_layout(
                 title="Waiting to run backward selection…",
-                template="ggplot2", width=800, height=300
+                template="ggplot2"
             )
             return fig
 
@@ -1715,7 +1723,7 @@ def server(input, output, session):
             title="Backward Elimination Accuracy",
             xaxis_title="Number of Features",
             yaxis_title="Accuracy",
-            template="ggplot2", width=800, height=300,
+            template="ggplot2",
             # ← replace your old xaxis=… here with:
             xaxis=dict(
                 autorange='reversed',      # ← flip the direction
@@ -1737,7 +1745,6 @@ def server(input, output, session):
             for i, (nfeat, feats, sc) in enumerate(iters)
         )
 
-
     @render.ui
     def backward_slider_ui():
         _, iters = backward_res()
@@ -1757,7 +1764,7 @@ def server(input, output, session):
     def backward_scatter_plot():
         if input.run_backward() < 1:
             fig = go.Figure()
-            fig.update_layout(title="…waiting for backward selection…", width=600, height=500)
+            fig.update_layout(title="…waiting for backward selection…")
             return fig
 
         _, iters = backward_res()
@@ -1784,7 +1791,6 @@ def server(input, output, session):
             template="ggplot2", title=f"{nfeat} Features", color_discrete_map=cmap
         )
         fig.update_traces(marker=dict(size=26, opacity=0.6))
-        fig.update_layout(width=600, height=500)
         return fig
 # ——————————————
 # Run the app
