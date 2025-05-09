@@ -1384,7 +1384,9 @@ def server(input, output, session):
         res = clust_res()
         if not res:
             fig = go.Figure()
-            fig.update_layout(title="No data")
+            fig.update_layout(title="No data",
+                              width=800, height=830
+                              )
             return fig
 
         dfp = res["dfp"]
