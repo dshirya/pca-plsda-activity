@@ -1014,19 +1014,6 @@ app_ui = ui.page_fluid(
                 ),
                 ui.nav_panel(
                     "Evaluation",
-                        ui.h3("Number of Components"),
-                            ui.input_action_button(
-                                "run_eval_n", 
-                                "Run"
-                            ),
-                            ui.row(
-                                ui.column(
-                                8,
-                                output_widget("eval_n_plot"),
-                                offset=2,
-                                style="display:flex; justify-content:center;"
-                                )
-                            ),
                         ui.hr(),
                         ui.h3("Forward Feature Selection"),
                             ui.input_action_button("run_forward", "Run"),
@@ -1707,46 +1694,6 @@ def server(input, output, session):
 
     # ————————————————————————
 
-    
-    # ——————————————————————————————————————
-    # 1) Accuracy vs # Components
-    # ——————————————————————————————————————
-    @reactive.Calc
-    @reactive.event(input.run_eval_n)
-    def eval_n_res():
-        # only runs when the button is clicked
-        numeric = df.drop(columns=[label_col])
-        return [
-            evaluate_subset(numeric, df[label_col], list(numeric.columns), n_components=n)
-            for n in range(1, 16)
-        ]
-
-    @render_widget
-    def eval_n_plot():
-        if input.run_eval_n() < 1:
-            fig = go.Figure()
-            fig.update_layout(
-                title="Click “Run” to calculate best number of Components.",
-                template="ggplot2",
-                height=300
-            )
-            return fig
-
-        hist = eval_n_res()
-        fig = go.Figure(go.Scatter(
-            x=list(range(1, len(hist) + 1)),
-            y=hist,
-            mode="lines+markers",
-            name="Accuracy"
-        ))
-        fig.update_layout(
-            title="PLS-DA: Accuracy vs # Components",
-            xaxis_title="Components",
-            yaxis_title="Accuracy",
-            template="ggplot2",
-            height=300
-        )
-        return fig
 
     # ——————————————————————————————————————
     # 2) Forward Feature Selection
