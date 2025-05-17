@@ -322,17 +322,17 @@ feature_groups_plsda = {
         "features": [
             ("A",                 "index_A"),
             ("Index B",                 "index_B"),
-            ("Norm A",      "normalized_index_A"),
-            ("Norm B",      "normalized_index_B"),
-            ("Max",           "largest_index"),
-            ("Min",          "smallest_index"),
-            ("Average",           "avg_index"),
+            ("Norm A",      "index_A_norm"),
+            ("Norm B",      "index_B_norm"),
+            ("Max",           "index_max"),
+            ("Min",          "index_min"),
+            ("Average",           "index_avg"),
         ],
     },
     "atomic_weight": {
         "label": "Atomic Weight",
         "features": [
-            ("Weighted A+B",            "atomic_weight_weighted_A+B"),
+            ("Weighted A+B",            "atomic_weight_A+B_weighted"),
             ("A/B",                   "atomic_weight_A/B"),
             ("A-B",                   "atomic_weight_A-B"),
         ],
@@ -362,8 +362,8 @@ feature_groups_plsda = {
             ("B",               "valencee_total_B"),
             ("A-B",             "valencee_total_A-B"),
             ("A+B",             "valencee_total_A+B"),
-            ("Weighted A+B",    "valencee_total_weighted_A+B"),
-            ("Norm Weighted A+B","valencee_total_weighted_norm_A+B"),
+            ("Weighted A+B",    "valencee_total_A+B_weighted"),
+            ("Norm Weighted A+B","valencee_total_A+B_weighted_norm"),
         ],
     },
     "unpaired": {
@@ -373,8 +373,8 @@ feature_groups_plsda = {
             ("B",              "unpaired_electrons_B"),
             ("A-B",            "unpaired_electrons_A-B"),
             ("A+B",            "unpaired_electrons_A+B"),
-            ("Weighted A+B",   "unpaired_electrons_weighted_A+B"),
-            ("Norm Weighted A+B","unpaired_electrons_weighted_norm_A+B"),
+            ("Weighted A+B",   "unpaired_electrons_A+B_weighted"),
+            ("Norm Weighted A+B","unpaired_electrons_A+B_weighted_norm"),
         ],
     },
     "gilman": {
@@ -384,8 +384,8 @@ feature_groups_plsda = {
             ("B",                "Gilman_B"),
             ("A-B",              "Gilman_A-B"),
             ("A+B",              "Gilman_A+B"),
-            ("Weighted A+B",     "Gilman_weighted_A+B"),
-            ("Norm Weighted A+B","Gilman_weighted_norm_A+B"),
+            ("Weighted A+B",     "Gilman_A+B_weighted"),
+            ("Norm Weighted A+B", "Gilman_A+B_weighted_norm"),
         ],
     },
     "z_eff": {
@@ -398,7 +398,7 @@ feature_groups_plsda = {
             ("Max",               "Z_eff_max"),
             ("Min",               "Z_eff_min"),
             ("Avg",               "Z_eff_avg"),
-            ("Norm Weighted A+B", "Z_eff_weighted_norm_A+B"),
+            ("Norm Weighted A+B", "Z_eff_A+B_weighted_norm"),
         ],
     },
     "ionization_energy": {
@@ -411,7 +411,7 @@ feature_groups_plsda = {
             ("Max",       "ionization_energy_max"),
             ("Min",       "ionization_energy_min"),
             ("Avg",       "ionization_energy_avg"),
-            ("Norm Weighted A+B","ionization_energy_weighted_norm_A+B"),
+            ("Norm Weighted A+B","ionization_energy_A+B_weighted_norm"),
         ],
     },
     "coordination_number": {
@@ -450,7 +450,7 @@ feature_groups_plsda = {
             ("A/B",          "CIF_radius_A/B"),
             ("A-B",          "CIF_radius_A-B"),
             ("Avg",          "CIF_radius_avg"),
-            ("Norm Weighted A+B","CIF_radius_weighted_norm_A+B"),
+            ("Norm Weighted A+B","CIF_radius_A+B_weighted_norm"),
         ],
     },
     "pauling_radius_cn12": {
@@ -461,7 +461,7 @@ feature_groups_plsda = {
             ("A-B", "Pauling_radius_CN12_A-B"),
             ("A/B", "Pauling_radius_CN12_A/B"),
             ("Avg", "Pauling_radius_CN12_avg"),
-            ("Norm Weighted A+B","Pauling_radius_CN12_weighted_norm_A+B"),
+            ("Norm Weighted A+B","Pauling_radius_CN12_A+B_weighted_norm"),
         ],
     },
     "pauling_en": {
@@ -474,7 +474,7 @@ feature_groups_plsda = {
             ("Max",          "Pauling_EN_max"),
             ("Min",          "Pauling_EN_min"),
             ("Avg",          "Pauling_EN_avg"),
-            ("Norm Weighted A+B","Pauling_EN_weighted_norm_A+B"),
+            ("Norm Weighted A+B","Pauling_EN_A+B_weighted_norm"),
         ],
     },
     "martynov_batsanov_en": {
@@ -487,7 +487,7 @@ feature_groups_plsda = {
             ("Max",     "Martynov_Batsanov_EN_max"),
             ("Min",     "Martynov_Batsanov_EN_min"),
             ("Avg",     "Martynov_Batsanov_EN_avg"),
-            ("Norm Weighted A+B","Martynov_Batsanov_EN_weighted_norm_A+B"),
+            ("Norm Weighted A+B","Martynov_Batsanov_EN_A+B_weighted_norm"),
         ],
     },
     "melting_point": {
@@ -500,7 +500,7 @@ feature_groups_plsda = {
             ("Max",     "melting_point_K_max"),
             ("Min",     "melting_point_K_min"),
             ("Avg",     "melting_point_K_avg"),
-            ("Norm Weighted A+B","melting_point_K_weighted_norm_A+B"),
+            ("Norm Weighted A+B","melting_point_K_A+B_weighted_norm"),
         ],
     },
     "density": {
@@ -513,7 +513,7 @@ feature_groups_plsda = {
             ("Max",             "density_max"),
             ("Min",             "density_min"),
             ("Avg",             "density_avg"),
-            ("Norm Weighted A+B","density_weighted_norm_A+B"),
+            ("Norm Weighted A+B","density_A+B_weighted_norm"),
         ],
     },
     "specific_heat": {
@@ -526,7 +526,7 @@ feature_groups_plsda = {
             ("Max",       "specific_heat_max"),
             ("Min",       "specific_heat_min"),
             ("Avg",       "specific_heat_avg"),
-            ("Norm Weighted A+B","specific_heat_weighted_norm_A+B"),
+            ("Norm Weighted A+B","specific_heat_A+B_weighted_norm"),
         ],
     },
     "cohesive_energy": {
@@ -539,7 +539,7 @@ feature_groups_plsda = {
             ("Max",     "cohesive_energy_max"),
             ("Min",     "cohesive_energy_min"),
             ("Avg",     "cohesive_energy_avg"),
-            ("Norm Weighted A+B","cohesive_energy_weighted_norm_A+B"),
+            ("Norm Weighted A+B","cohesive_energy_A+B_weighted_norm"),
         ],
     },
     "bulk_modulus": {
@@ -552,7 +552,7 @@ feature_groups_plsda = {
             ("Max",        "bulk_modulus_max"),
             ("Min",        "bulk_modulus_min"),
             ("Avg",        "bulk_modulus_avg"),
-            ("Norm Weighted A+B",  "bulk_modulus_weighted_norm_A+B"),
+            ("Norm Weighted A+B",  "bulk_modulus_A+B_weighted_norm"),
         ],
     },
 }
