@@ -783,7 +783,7 @@ feature_groups_cluster = {
 # at the top of your UI-building code:
 default_pls_feats = {
     "Pauling_radius_CN12_A/B",
-    "atomic_weight_weighted_A+B"
+    "atomic_weight_A+B_weighted"
 }
 
 feature_cards_plsda = []
@@ -929,6 +929,7 @@ cards_cluster_col4 = feature_cards_cluster[3*chunk:]
 i = 1   
 moved = cards_cluster_col3.pop(i)
 cards_cluster_col4.append(moved)
+
 # ——————————————
 # UI definition
 # ——————————————
