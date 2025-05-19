@@ -135,7 +135,7 @@ INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 
 
 
-# Principal component analysis 
+# Principal Component Analysis 
 
 This notebook introduces Principal Component Analysis (PCA) as an exploratory tool, focusing on two main visualizations that build student understanding of how elemental properties can be used to infer compound behavior and classification.
 
@@ -182,7 +182,7 @@ All features are enabled by default, but students can **individually enable/disa
 
 Together, these two visualizations offer a rich, hands-on way for students to explore feature selection, dimensionality reduction, and chemical trends.
 
-# Partial least square discriminant analysis 
+# Partial Least Square Discriminant Analysis 
 
 This notebook introduces **Partial Least Squares–Discriminant Analysis (PLS-DA)**, a supervised machine learning method used to classify compounds into one of three structure types: **CsCl-type, NaCl-type, or ZnS-type**. In this exercise, all compounds already have class labels assigned, so the objective is to use data-driven features to train and interpret a classification model.
 
