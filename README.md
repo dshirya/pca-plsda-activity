@@ -23,7 +23,7 @@ In this activity, PCA (Principal Component Analysis) is used to construct a **da
 - This allows them to explore a mode
 rn reinterpretation of the periodic table based not on empirical arrangement but on statistical similarities in high-dimensional property space.
 
-Additionally, the PCA notebook includes a **second visualization**: compounds from Linus Pauling’s 1929 study are plotted onto the same PCA space, visualized as lines connecting constituent elements. The midpoint is marked, and compounds are colored by structure type (CsCl, NaCl, ZnS). This historical visualization allows students to explore:
+Second part of PCA is **Clustering**: binary equiatomic compounds from Linus Pauling’s 1929 study are plotted onto the same PCA space, visualized as lines connecting constituent elements. The midpoint is marked, and compounds are colored by structure type (CsCl, NaCl, ZnS). This historical visualization allows students to explore:
 - Whether structural clusters emerge from Pauling-era data
 - How different subsets of properties impact separability
 - Which features might have been intuitively used by Pauling, and how ML confirms or expands on those ideas
