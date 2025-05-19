@@ -1,11 +1,7 @@
 
 # Activity Overview
 
-This repository provides an educational activity for chemistry students and professionals to learn basic machine learning techniques – specifically PCA and PLS-DA – in the context of inorganic chemistry. The activity uses **interactive Jupyter notebooks** to explore how elemental properties can be used as features for ML models. The pedagogical goal is to put a modern, data-driven spin on Linus Pauling’s 1929 study of binary compounds. In 1929, Pauling famously attempted to rationalize crystal structures of equiatomic binary compounds using simple rules based on atomic properties . This project revisits that idea with modern feature engineering and machine learning: we use a rich set of element-derived features to see if we can cluster and classify binary **AB** compounds (where A and B are elements) into their correct structure types (CsCl, NaCl, or ZnS). By combining Pauling’s early intuition with today’s ML tools, users will learn about **feature selection**, **unsupervised clustering vs. supervised classification**, and how to interpret ML results in chemical terms.
-
-
-
-
+This repository provides an educational activity for chemistry students and professionals to learn basic machine learning techniques – specifically PCA and PLS-DA – in the context of inorganic chemistry. The activity made in the **application** format, that can easily be deployed to the web to explore how elemental properties can be used as features for ML models. The pedagogical goal is to put a modern, data-driven spin on Linus Pauling’s 1929 study of binary compounds. In 1929, Pauling famously attempted to rationalize crystal structures of equiatomic binary compounds using simple rules based on atomic properties . This project revisits that idea with modern feature engineering and machine learning: we use a rich set of element-derived features to see if we can cluster and classify binary **AB** compounds (where A and B are elements) into their correct structure types (CsCl, NaCl, or ZnS). By combining Pauling’s early intuition with today’s ML tools, users will learn about **feature selection**, **unsupervised clustering vs. supervised classification**, and how to interpret ML results in chemical terms.
 
 # Educational Goals and Methodology
 
@@ -64,7 +60,6 @@ This **interactive process reinforces active learning**. Students don’t just s
 To complement manual exploration, the PLS-DA notebook includes:
 - **Forward feature selection** – Start with no features and add one at a time to optimize model accuracy.
 - **Backward elimination** – Start with all features and remove the least helpful ones until reaching a minimum feature set.
-- **Optimal component evaluation** – Test model accuracy across different component counts to find a balance between underfitting and overfitting.
 
 Together, these tools introduce students to best practices in ML:
 - **Avoiding overfitting** by limiting features or components
@@ -85,19 +80,11 @@ By the end of the activity, students should be able to:
 This approach merges **data science with chemical intuition**, empowering learners to analyze real-world problems with statistical tools while grounding their understanding in physical meaning.
 # Getting started
 
-### Requirements
-
-Before running the project, make sure you have the following:
-* Python 3.9 or later (If you don’t have it, download it from [python.org](https://www.python.org))
-* Jupyter Lab (An interactive development environment for notebooks)
-* Git (Optional, if you want to clone the repository, otherwise you can download the ZIP file)
-* A modern web browser (Safari, Chrome, etc.)
-
 ### Installation Steps
 
 1. **Install Python**
 * Download and install Python from the [official website](https://www.python.org). Follow the installer instructions for your operating system.
-2. **Install Jupyter Lab**
+2. **Install Conda environment manager**
 * Open your terminal (or Command Prompt on Windows) and type the following command:
 ```bash
 pip install jupyterlab
@@ -118,29 +105,29 @@ git clone https://github.com/dshirya/pca-plsda-activity/tree/main
 cd path/to/your/project-folder
 ```
 * Install all necessary libraries by running:
-
+```bash
+conda create -n <name>
+```
+```bash
+conda activate <name>
+```  
 ```bash
 pip install -r requirements.txt
 ```
 
 ### Running the Project
 
-Once everything is installed, follow these steps to run the project:
-1.	Start Jupyter Lab: 
-In the terminal, make sure you are in the project folder and run:
+1.	Run the app on your computer: 
+Once everything is installed, in the terminal go to the folder with application and:
 ```bash
-jupyter lab
+shiny run app.py
 ```
-A web browser window will open showing the Jupyter Lab interface.
+You will see the link, open it in your browser:
+```bash
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+```
+2.	Deploy app to the web service:  
 
-2.	Open the Notebook:  
-In Jupyter Lab, locate and click on the notebook file (it will have the .ipynb extension).  
-Main files:
-    * ```pca-analysis.ipynb```
-    * ```pls_da-analysis.ipynb```
-
-4.	Run the Code Cells:  
-You can run each cell by clicking on it and pressing **Shift + Enter** or by clicking the “Run” button. Follow the instructions in the notebook to perform PCA and PLS-DA analyses.
 
 
 # PCA Analysis Notebook (`pca-analysis.ipynb`)
@@ -225,79 +212,13 @@ These are wrapper methods that iteratively build or reduce the feature set, meas
 
 #### Forward Selection
 
-Starts with no features, then **adds features one-by-one**, each time choosing the one that most improves model performance. This continues until reaching the maximum number of features or performance plateaus.
-
-```python
-from pls_da.feature import forward_selection_plsda
-
-selected_feats, perf_hist = forward_selection_plsda(
-    filepath, 
-    target_column="Class", 
-    max_features=15,          # maximum number of features to select
-    n_components=2,           # number of PLS components to use in evaluation
-    scoring='accuracy',       # metric to optimize
-    verbose=True,             # print details of progress
-    visualize=True,           # show plots of performance vs. # features
-    interactive_scatter=True  # show 2D PLS score plot with selected features
-)
-print("Selected features via forward selection:", selected_feats)
-```
-
-You can modify:
-- `max_features`: limit how many features to include in final model
-- `n_components`: how many PLS components to use during selection
-- `scoring`: metric to optimize (e.g., `'accuracy'`, `'f1_macro'`)
-- `visualize` / `interactive_scatter`: show graphical results for better interpretation
+Starts with two features, selected by user or randomly, then **adds features one-by-one**, each time choosing the one that most improves model performance. This continues until reaching the maximum number of features or performance plateaus.
 
 #### Backward Elimination
 
-Starts with all features, and **removes the least useful ones**, continuing until only a minimal core remains.
-
-```python
-from pls_da.feature import backward_elimination_plsda
-
-remaining_feats, perf_hist_back = backward_elimination_plsda(
-    filepath, 
-    target_column="Class", 
-    min_features=5,           # minimum number of features to keep
-    n_components=2, 
-    scoring='accuracy', 
-    verbose=True, 
-    visualize=True,
-    interactive_scatter=True
-)
-print("Remaining features via backward elimination:", remaining_feats)
-```
-
-You can modify:
-- `min_features`: minimum number of features allowed in final set
-- `scoring`, `n_components`, and visualization flags
+Starts with all features, and **removes one-by-one**, continuing until only a minimal core remains.
 
 These two selection methods allow students to compare how **different strategies can lead to different feature sets**, giving insight into the **robustness and redundancy** of chemical descriptors.
-
----
-
-### Evaluating Optimal Number of PLS Components
-
-The number of components used in PLS-DA greatly affects model performance. While the number of components **is not directly chosen by the user**, the notebook allows users to **evaluate performance for different numbers of components** to find the optimal choice.
-
-```python
-from pls_da.plsda import evaluate_n_components_plsda
-
-fig, scores = evaluate_n_components_plsda(
-    filepath, 
-    target_column="Class", 
-    scoring="accuracy",       # can be changed to f1, precision, etc.
-    max_components=15, 
-    verbose=False
-)
-```
-
-This function returns:
-- A plot showing how accuracy changes with the number of components
-- A dictionary of scores for each component count
-
-This helps students **choose a good balance between underfitting and overfitting**, a key concept in supervised learning.
 
 ---
 
