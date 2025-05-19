@@ -3,6 +3,8 @@
 
 This repository provides an educational activity for chemistry students and professionals to learn basic machine learning techniques – specifically PCA and PLS-DA – in the context of inorganic chemistry. The activity made in the **application** format, that can easily be deployed to the web to explore how elemental properties can be used as features for ML models. The pedagogical goal is to put a modern, data-driven spin on Linus Pauling’s 1929 study of binary compounds. In 1929, Pauling famously attempted to rationalize crystal structures of equiatomic binary compounds using simple rules based on atomic properties . This project revisits that idea with modern feature engineering and machine learning: we use a rich set of element-derived features to see if we can cluster and classify binary **AB** compounds (where A and B are elements) into their correct structure types (CsCl, NaCl, or ZnS). By combining Pauling’s early intuition with today’s ML tools, users will learn about **feature selection**, **unsupervised clustering vs. supervised classification**, and how to interpret ML results in chemical terms.
 
+![app-overview](https://github.com/user-attachments/assets/007a1735-e4c0-4513-9830-6a78a315e5d9)
+
 # Educational Goals and Methodology
 
 This project is built around a **hands-on, visual, and interactive learning experience** to help chemistry students understand the foundations of machine learning (ML) in a chemical context — specifically **dimensionality reduction**, **feature selection**, and **classification** of crystal structures. The educational activity is split into two parts — PCA and PLS-DA — each with its own methodology and objectives.
@@ -12,8 +14,9 @@ This project is built around a **hands-on, visual, and interactive learning expe
 ### PCA as a New Perspective on the Periodic Table
 
 In this activity, PCA (Principal Component Analysis) is used to construct a **data-driven periodic table**, leveraging a modern set of 74 numerical features — far more than were historically available. These include atomic, electronic, thermal, and DFT-derived properties.
+![pca](https://github.com/user-attachments/assets/28c38145-27e0-45df-ac4c-97f473c4477e)
 
-![Screen Recording 2025-04-01 at 3 07 32 PM](https://github.com/user-attachments/assets/2eee368d-9ca4-4f5a-9ac4-ca84d57c6793)
+
 
 - Students use **interactive feature toggles** to include or exclude specific properties or whole categories.
 - By doing so, they observe **how different features reshape the PCA projection** of elements and how elements cluster differently.
@@ -24,8 +27,9 @@ Additionally, the PCA notebook includes a **second visualization**: compounds fr
 - Whether structural clusters emerge from Pauling-era data
 - How different subsets of properties impact separability
 - Which features might have been intuitively used by Pauling, and how ML confirms or expands on those ideas
+![clust](https://github.com/user-attachments/assets/99609e93-c292-4fe9-be48-f9bbe992cd31)
 
-![PCA_Binary](https://github.com/user-attachments/assets/779a1193-596c-424e-94b9-092359f1c339)
+
 ---
 
 ### PLS-DA and Visualization of Featurized Binary Compounds
@@ -51,7 +55,8 @@ A key part of both PCA and PLS-DA activities is the inclusion of **interactive, 
 
 This **interactive process reinforces active learning**. Students don’t just see a pre-trained model — they **build their own**, adjust parameters, and discover chemical patterns themselves. It mimics how scientists work: forming hypotheses, testing them, and analyzing outcomes.
 
-![PLS-DA_table](https://github.com/user-attachments/assets/a88dc7cb-2ce7-46cc-8cb3-08fe13d05008)
+![plsda](https://github.com/user-attachments/assets/056ef466-79c0-48bc-a366-a77e83b697ca)
+
 
 ---
 
@@ -65,7 +70,8 @@ Together, these tools introduce students to best practices in ML:
 - **Avoiding overfitting** by limiting features or components
 - **Explaining models** through smaller, meaningful feature subsets
 
-![components](https://github.com/user-attachments/assets/7aeed26f-d0ab-4252-8fcc-d431b847fef8)
+![auto-overview](https://github.com/user-attachments/assets/f01db3fe-53a0-45df-afad-2d53b883b607)
+
 
 ---
 
