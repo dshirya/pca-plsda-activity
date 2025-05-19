@@ -40,7 +40,6 @@ The PLS-DA notebook works with the **same compounds** as the PCA activity, but u
 
 - The features include **averages, differences, ratios, max/min** values across properties like electronegativity, radius, etc.
 - These featurized compounds are visualized in a new feature space, and classification is attempted using PLS-DA.
-- Students do not manually set the number of components, but can **evaluate optimal component count** using a built-in function.
 - Most importantly, they can explore **which features are most important** for classification.
 
 ---
@@ -136,11 +135,11 @@ INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 
 
 
-# PCA Analysis Notebook (`pca-analysis.ipynb`)
+# Principal component analysis 
 
 This notebook introduces Principal Component Analysis (PCA) as an exploratory tool, focusing on two main visualizations that build student understanding of how elemental properties can be used to infer compound behavior and classification.
 
-### 1. PCA Periodic Table (Elements Only)
+### 1. PCA Element Mapping (Elements Only)
 
 In the first part of the notebook, users load a dataset of **80 chemical elements**, each described by up to **74 numeric features**. These features are based on a wide range of physical and chemical properties (see below for the full list of groups). A **PCA analysis is performed on the element-level data**, projecting the 74-dimensional feature space into a 2D plane for visualization. The result is a **PCA-based periodic table**: each point on the scatter plot represents one element, positioned according to its projection on the first two principal components.
 
@@ -151,7 +150,7 @@ This part of the activity allows users to:
 
 This PCA periodic table helps students intuitively understand **relationships between elements** based on quantitative properties rather than periodic table position alone.
 
-### 2. Compound Visualization (Binary Compounds)
+### 2. Compound clustering (Binary Compounds)
 
 In the second part of the notebook, the same PCA space is reused to **plot binary equiatomic compounds** (from Pauling’s 1929 dataset). Here’s how it works:
 - **Each compound is represented by a line** that connects the PCA coordinates of its two constituent elements (A and B).
@@ -183,7 +182,7 @@ All features are enabled by default, but students can **individually enable/disa
 
 Together, these two visualizations offer a rich, hands-on way for students to explore feature selection, dimensionality reduction, and chemical trends.
 
-# PLS-DA Analysis Notebook (`pls_da-analysis.ipynb`)
+# Partial least square discriminant analysis 
 
 This notebook introduces **Partial Least Squares–Discriminant Analysis (PLS-DA)**, a supervised machine learning method used to classify compounds into one of three structure types: **CsCl-type, NaCl-type, or ZnS-type**. In this exercise, all compounds already have class labels assigned, so the objective is to use data-driven features to train and interpret a classification model.
 
@@ -232,7 +231,6 @@ These two selection methods allow students to compare how **different strategies
 
 - Load a dataset with 133 CAF-generated features and class labels
 - Toggle features manually to explore clustering
-- Evaluate optimal number of PLS components for classification
 - Run forward or backward feature selection to identify key descriptors
 - Visualize score plots, accuracy trends, and model predictions
 
