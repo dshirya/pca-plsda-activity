@@ -1941,6 +1941,22 @@ def server(input, output, session):
                 'step', 'accuracy', 'feature_removed', 'total_features'
             ])
         return backward_res.result()
+    
+    @render.text
+    def backward_final_feats():
+        if input.run_backward() < 1 or backward_res.result() is None:
+            return ""
+        # get the elimination log
+        df_steps = backward_res.result()
+        # start with all features
+        current_feats = list(df.drop(columns=[label_col]).columns)
+        # remove in order of the recorded removals
+        for _, row in df_steps.sort_values("step").iterrows():
+            feat = row["feature_removed"]
+            if feat:
+                current_feats.remove(feat)
+        # format as a nice comma-list
+        return f"Final {len(current_feats)} features: " + ", ".join(current_feats)
 
     @render.ui
     def backward_slider_ui():
