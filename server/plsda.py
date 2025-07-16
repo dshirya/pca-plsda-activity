@@ -247,13 +247,13 @@ def setup_plsda_server(input, output, session):
         )
         fig.update_traces(
             marker=dict(
-                size=34, 
+                size=24, 
                 opacity=0.8
             )
         )
         fig.update_layout(
             margin=dict(l=20, r=20, t=30, b=20),
-            font=dict(size=24),
+            font=dict(size=16),
             width=800,
             height=830,
             showlegend=True,
