@@ -16,7 +16,7 @@ import plotly.graph_objects as go
 from config.feature_groups import FEATURE_GROUPS_PLSDA
 from config.settings import DEFAULT_PLS_FEATURES
 from utils.helpers import make_safe_id
-from utils.data_processing import load_features_data
+from utils.data_processing import load_features_data, prepare_plsda_data_with_formula
 
 
 def setup_plsda_server(input, output, session):
@@ -81,9 +81,9 @@ def setup_plsda_server(input, output, session):
         if len(valid) < 2:
             return None
         
-        # 2) Prepare X, y
-        X = df[valid].values
-        y = df["Class"].values
+        # 2) Prepare X, y, and formulas
+        X_df, y, formulas = prepare_plsda_data_with_formula(df)
+        X = X_df[valid].values
 
         # 3) Standardize the full data
         with warnings.catch_warnings():
@@ -197,6 +197,7 @@ def setup_plsda_server(input, output, session):
         return {
             "scores": scores,
             "labels": y,
+            "formulas": formulas,
             "metrics": metrics_df,
             "contrib": contrib_df,
             "vip": vip_df,
@@ -225,7 +226,8 @@ def setup_plsda_server(input, output, session):
         df_sc = pd.DataFrame({
             "LV1": res["scores"][:,0],
             "LV2": res["scores"][:,1],
-            "Class": res["labels"]
+            "Class": res["labels"],
+            "Formula": res["formulas"] if res["formulas"] is not None else ["N/A"] * len(res["labels"])
         })
         cmap = {
             cl: c for cl,c in zip(
@@ -238,6 +240,7 @@ def setup_plsda_server(input, output, session):
         fig = px.scatter(
             df_sc,
             x="LV1", y="LV2", color="Class",
+            hover_data=["Formula"],
             labels={
                 "LV1": f"LV 1 ({res['pls1_pct']:.1f}%)",
                 "LV2": f"LV 2 ({res['pls2_pct']:.1f}%)"

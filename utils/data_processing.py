@@ -57,6 +57,30 @@ def prepare_plsda_data(df):
     return X, y
 
 
+def prepare_plsda_data_with_formula(df):
+    """
+    Prepare data for PLS-DA analysis while preserving Formula column.
+    
+    Args:
+        df: Input DataFrame
+        
+    Returns:
+        Tuple of (X, y, formulas) where X is features, y is target, and formulas is Formula column
+    """
+    # Extract Formula column if it exists
+    formulas = df["Formula"] if "Formula" in df.columns else None
+    
+    # Prepare features (exclude both Class and Formula)
+    columns_to_drop = [LABEL_COLUMN]
+    if "Formula" in df.columns:
+        columns_to_drop.append("Formula")
+    
+    X = df.drop(columns=columns_to_drop)
+    y = df[LABEL_COLUMN]
+    
+    return X, y, formulas
+
+
 def filter_valid_features(df, selected_features):
     """
     Filter to only valid features that exist in the dataframe.
